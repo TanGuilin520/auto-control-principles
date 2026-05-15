@@ -32,9 +32,6 @@
 │   ├── fig5_9_pid_frequency.png                 # PID 频域特性
 │   ├── fig5_x_correction_design_flow.png         # 校正设计流程
 │   └── fig5_x_nyquist_openloop_summary.png      # 开环Nyquist汇总
-├── 书籍/
-│   └── 自动控制原理--卢京潮 2009.pdf             # 参考教材（加密，仅本地）
-└── memory/                                      # Claude Code 记忆文件
 ```
 
 ---
