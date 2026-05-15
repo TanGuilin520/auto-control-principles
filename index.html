@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自动控制原理 — 频域分析与校正</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-dark: #0f3b8e;
+    --bg: #f8fafc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f4f8;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%);
+    color: #fff;
+    text-align: center;
+    padding: 64px 24px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 40px;
+    background: #f0f4f8;
+    clip-path: ellipse(60% 100% at 50% 100%);
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; }
+  .hero p { font-size: 1rem; opacity: 0.85; margin-top: 10px; max-width: 600px; margin-inline: auto; }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+    padding: 28px 32px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+  .card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card p { color: #475569; margin: 6px 0; font-size: 0.95rem; }
+  .card a {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: var(--primary);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+  }
+  .card a:hover { background: var(--primary-dark); }
+  .card a.secondary {
+    background: #e8f0fe;
+    color: var(--primary);
+    margin-left: 10px;
+  }
+  .card a.secondary:hover { background: #d0e0fc; }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-right: 4px;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+  .tag.green { background: #d1fae5; color: #059669; }
+  .tag.yellow { background: #fef3c7; color: #b45309; }
+
+  .books {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .book {
+    text-align: center;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .book strong { display: block; font-size: 0.95rem; color: #1e293b; }
+  .book em { display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+
+  .footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    padding: 20px;
+  }
+  .footer a { color: var(--primary); text-decoration: none; }
+
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.4rem; }
+    .card { padding: 20px; }
+    .card a { display: block; margin: 8px 0; }
+    .card a.secondary { margin-left: 0; }
+    .books { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>自动控制原理 · 频域分析与校正</h1>
+  <p>以直流电机转速控制为贯穿例子，串起第5章全部知识点<br>交互式网页 + Python 图表 + 完整教学文档</p>
+</div>
+
+<div class="container">
+
+  <!-- 主要页面 -->
+  <div class="card">
+    <h2>📖 第5章：线性系统的频域分析与校正</h2>
+    <p>
+      <span class="tag">Nyquist 图</span>
+      <span class="tag">Bode 图</span>
+      <span class="tag green">稳定裕度</span>
+      <span class="tag yellow">串联校正</span>
+      <span class="tag">PID</span>
+    </p>
+    <p>覆盖 5.1~5.9 全部小节，含 25 张 Python 生成图表、3 道完整例题、超前/滞后/滞后-超前/PID 四种校正方法对比。左侧导航栏可快速跳转。</p>
+    <a href="第5章_频域分析与校正.html">📘 打开第5章</a>
+    <a class="secondary" href="https://github.com/TanGuilin520/auto-control-principles/blob/master/%E7%AC%AC5%E7%AB%A0_%E7%BA%BF%E6%80%A7%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%A2%91%E5%9F%9F%E5%88%86%E6%9E%90%E4%B8%8E%E6%A0%A1%E6%AD%A3.md">📝 查看 Markdown 源文件</a>
+  </div>
+
+  <!-- 全书概览 -->
+  <div class="card">
+    <h2>🎯 自动控制原理 · 全书概览</h2>
+    <p>从第1章到第9章，用"直流电机转速控制"一个例子串起自动控制原理的全部核心知识。每个知识点配有 SVG 示意图和生活化类比。</p>
+    <a href="自动控制原理入门.html">📗 打开全书概览</a>
+  </div>
+
+  <!-- 代码 -->
+  <div class="card">
+    <h2>🐍 Python 图表生成</h2>
+    <p>本章全部 25 张图表由 Python (matplotlib + numpy + scipy) 自动生成，代码开放可复现。</p>
+    <a href="https://github.com/TanGuilin520/auto-control-principles/blob/master/generate_all_figures.py">💻 查看源码</a>
+    <a class="secondary" href="https://github.com/TanGuilin520/auto-control-principles">🏠 GitHub 仓库</a>
+  </div>
+
+  <!-- 参考书籍 -->
+  <div class="card">
+    <h2>📚 参考书籍</h2>
+    <div class="books">
+      <div class="book">
+        <strong>📘 自动控制原理</strong>
+        <em>卢京潮 主编<br>清华大学出版社，2009</em>
+      </div>
+      <div class="book">
+        <strong>📙 自动控制原理</strong>
+        <em>胡寿松 主编<br>科学出版社，第7版，2019</em>
+      </div>
+      <div class="book">
+        <strong>📗 控制之美</strong>
+        <em>王广雄 主编<br>清华大学出版社，2012</em>
+      </div>
+    </div>
+    <p style="font-size:0.85rem; color:#64748b;">本项目内容参考上述三本经典教材整理编写，仅供学习交流使用。</p>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>Made with ❤️ by <a href="https://github.com/TanGuilin520">TanGuilin520</a> · MIT License</p>
+</div>
+
+</body>
+</html>
