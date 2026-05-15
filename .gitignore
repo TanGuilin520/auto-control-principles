@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PDF books (copyrighted)
+书籍/
+
+# Claude memory (personal)
+memory/
+
+# Jupyter
+.ipynb_checkpoints/

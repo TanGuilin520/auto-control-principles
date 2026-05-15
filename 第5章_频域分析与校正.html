@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第5章 线性系统的频域分析与校正 — 自动控制原理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-light: #e8f0fe;
+    --primary-dark: #0f3b8e;
+    --accent: #f59e0b;
+    --accent-light: #fef3c7;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --sidebar-w: 260px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.85;
+    font-size: 15.5px;
+    display: flex;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: #0f172a;
+    color: #cbd5e1;
+    overflow-y: auto;
+    z-index: 100;
+    padding: 24px 0 40px;
+    font-size: 0.88rem;
+    scrollbar-width: thin;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .sidebar .logo {
+    padding: 0 20px 16px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 12px;
+  }
+  .sidebar .logo span { font-size:0.75rem; color:#94a3b8; display:block; margin-top:2px; }
+  .sidebar a {
+    display: block;
+    padding: 6px 20px;
+    color: #94a3b8;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .sidebar a:hover, .sidebar a.active {
+    color: #fff;
+    background: rgba(59,130,246,0.15);
+    border-left-color: var(--primary);
+  }
+  .sidebar .sec-head {
+    padding: 14px 20px 4px;
+    font-weight: 700;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sidebar .sub-sec { padding-left: 12px; font-size: 0.82rem; }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%);
+    color: #fff;
+    padding: 48px 32px 44px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 50px;
+    background: var(--bg);
+    clip-path: ellipse(60% 100% at 50% 100%);
+  }
+  .hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
+  .hero .sub { font-size: 1rem; opacity: 0.8; margin-top: 8px; }
+  .hero .tags { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .hero .tag {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Content */
+  .content { max-width: 880px; margin: 0 auto; padding: 8px 24px 60px; }
+  .content h2 {
+    font-size: 1.45rem; font-weight: 700; color: var(--primary-dark);
+    margin: 36px 0 14px;
+    padding: 12px 18px;
+    border-left: 4px solid var(--primary);
+    background: var(--primary-light);
+    border-radius: 0 10px 10px 0;
+  }
+  .content h3 {
+    font-size: 1.15rem; font-weight: 700; color: #1e293b;
+    margin: 24px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+  .content h4 {
+    font-size: 1.02rem; font-weight: 600; color: #334155;
+    margin: 16px 0 8px;
+  }
+  .content p { margin: 10px 0; color: #334155; }
+  .content strong { color: #1e293b; }
+  .content blockquote {
+    background: var(--primary-light);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 18px;
+    margin: 14px 0;
+    color: #1e40af;
+  }
+  .content blockquote p { color: inherit; margin: 4px 0; }
+
+  .content a { color: var(--primary); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+
+  /* Math display */
+  .math-block { text-align: center; margin: 16px 0; overflow-x: auto; padding: 4px 0; }
+
+  /* Tables */
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.92rem;
+  }
+  .content th, .content td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .content th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+  .content tr:nth-child(even) { background: #f8fafc; }
+
+  /* Code */
+  .content code {
+    background: #f1f5f9;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #1e40af;
+  }
+  .content pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 14px 0;
+  }
+  .content pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Images */
+  .content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin: 10px auto;
+    display: block;
+    border: 1px solid var(--border);
+  }
+
+  /* Figure caption */
+  .fig-cap {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: -6px 0 14px;
+    font-style: italic;
+  }
+
+  /* Lists */
+  .content ul, .content ol { margin: 8px 0 8px 22px; color: #334155; }
+  .content li { margin: 4px 0; }
+
+  /* Horizontal rule */
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* Highlight boxes */
+  .box-blue {
+    background: var(--primary-light);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .box-blue .box-label { font-weight:700; color:var(--primary); font-size:0.82rem; text-transform:uppercase; letter-spacing:0.5px; }
+  .box-yellow {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .box-green {
+    background: #f0fdf4;
+    border-left: 4px solid var(--success);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .box-red {
+    background: #fef2f2;
+    border-left: 4px solid var(--danger);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+
+  .pid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .pid-card { border-radius: 12px; padding: 18px; text-align: center; color: #fff; }
+  .pid-card.p { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  .pid-card.i { background: linear-gradient(135deg, #10b981, #059669); }
+  .pid-card.d { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .pid-card h4 { font-size:1.4rem; margin-bottom:2px; color:#fff; }
+  .pid-card p { font-size:0.82rem; opacity:0.9; color:#fff; margin:2px 0; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .sg-item {
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+  }
+  .sg-item strong { display:block; margin-bottom:4px; }
+  .sg-item p { font-size:0.84rem; margin:4px 0 0; color: var(--text-light); }
+
+  .flow {
+    position: relative;
+    padding-left: 28px;
+    margin: 16px 0;
+  }
+  .flow::before {
+    content:''; position:absolute; left:8px; top:8px; bottom:8px;
+    width:3px;
+    background: linear-gradient(to bottom, var(--primary), var(--accent), var(--success), #8b5cf6, #ec4899, #f59e0b);
+    border-radius:3px;
+  }
+  .flow-item {
+    position:relative; padding:10px 0 10px 16px;
+  }
+  .flow-item::before {
+    content:''; position:absolute; left:-24px; top:16px;
+    width:12px; height:12px; border-radius:50%;
+    background:var(--primary); border:3px solid #fff;
+    box-shadow: 0 0 0 3px var(--primary);
+  }
+
+  .footer {
+    text-align: center; padding: 28px 20px; color: var(--text-light);
+    font-size: 0.85rem; border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 8px 14px 40px; }
+    .hero h1 { font-size: 1.4rem; }
+    .pid-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .content h2 { font-size: 1.2rem; }
+    .content table { font-size: 0.78rem; }
+    .content th, .content td { padding: 6px 8px; }
+  }
+
+  /* Back to top */
+  .back-top {
+    position: fixed; bottom: 30px; right: 30px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none;
+    font-size: 1.3rem; cursor: pointer; z-index: 200;
+    box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+    display: none; align-items: center; justify-content: center;
+  }
+  .back-top.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR ==================== -->
+<nav class="sidebar">
+  <div class="logo">第5章 频域分析与校正<span>自动控制原理</span></div>
+  <a href="#intro">本章导读</a>
+  <div class="sec-head">5.1 频率特性基本概念</div>
+  <a href="#sec51" class="sub-sec">5.1.1 频率响应</a>
+  <a href="#sec512" class="sub-sec">5.1.2 频率特性</a>
+  <a href="#sec513" class="sub-sec">5.1.3 图形表示</a>
+  <div class="sec-head">5.2 Nyquist 图</div>
+  <a href="#sec521" class="sub-sec">5.2.1 典型环节</a>
+  <a href="#sec522" class="sub-sec">5.2.2 开环系统</a>
+  <div class="sec-head">5.3 Bode 图 ⭐</div>
+  <a href="#sec531" class="sub-sec">5.3.1 典型环节</a>
+  <a href="#sec532" class="sub-sec">5.3.2 渐近线法绘制</a>
+  <a href="#sec533" class="sub-sec">5.3.3 反推传递函数</a>
+  <a href="#sec534" class="sub-sec">5.3.4 最小相位系统</a>
+  <div class="sec-head">5.4 频域稳定判据</div>
+  <a href="#sec541" class="sub-sec">5.4.1 奈奎斯特判据</a>
+  <a href="#sec542" class="sub-sec">5.4.2 判据应用</a>
+  <a href="#sec543" class="sub-sec">5.4.3 对数稳定判据</a>
+  <div class="sec-head">5.5 稳定裕度 ⭐</div>
+  <a href="#sec551" class="sub-sec">5.5.1 定义</a>
+  <a href="#sec552" class="sub-sec">5.5.2 计算</a>
+  <div class="sec-head">5.6 开环频域性能分析</div>
+  <a href="#sec561" class="sub-sec">5.6.1 低频段</a>
+  <a href="#sec562" class="sub-sec">5.6.2 中频段</a>
+  <a href="#sec563" class="sub-sec">5.6.3 高频段</a>
+  <div class="sec-head">5.7-5.8 闭环频率特性</div>
+  <a href="#sec57" class="sub-sec">5.7 闭环特性曲线</a>
+  <a href="#sec58" class="sub-sec">5.8 频域→时域指标</a>
+  <div class="sec-head">5.9 串联校正 ⭐⭐⭐</div>
+  <a href="#sec591" class="sub-sec">5.9.1 超前校正</a>
+  <a href="#sec592" class="sub-sec">5.9.2 滞后校正</a>
+  <a href="#sec593" class="sub-sec">5.9.3 滞后-超前</a>
+  <a href="#sec594" class="sub-sec">5.9.4 PID校正</a>
+  <a href="#summary" style="margin-top:8px; color:#f59e0b;">本章小结</a>
+</nav>
+
+<!-- ==================== MAIN ==================== -->
+<div class="main">
+
+<!-- Hero -->
+<div class="hero">
+  <h1>第5章 线性系统的频域分析与校正</h1>
+  <p class="sub">从 Nyquist 到 Bode，从稳定判据到校正设计 — 控制工程师的频域思维工具箱</p>
+  <div class="tags">
+    <span class="tag">Nyquist 图</span>
+    <span class="tag">Bode 图</span>
+    <span class="tag">稳定裕度</span>
+    <span class="tag">三频段分析</span>
+    <span class="tag">串联校正</span>
+    <span class="tag">PID 设计</span>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ==================== INTRO ==================== -->
+<div id="intro">
+  <blockquote>
+    <p><strong>本章导读</strong>：时域分析看的是系统对"突然变化"（阶跃信号）的反应；频域分析看的是系统对"不同频率正弦波"的反应。两种视角互相补充，共同构成完整的控制系统分析体系。本章从频率特性的基本概念出发，逐步引入 Nyquist 图、Bode 图两大工具，建立频域稳定判据和稳定裕度的概念，最终落脚于<strong>频域法串联校正</strong>——这是控制工程师设计控制器的核心技能。</p>
+    <p>建议学习方法：每学完一种图形工具（Nyquist / Bode），立刻用 MATLAB 或 Python 手动绘制一遍，体会"数据→图形→判断"的完整流程。</p>
+  </blockquote>
+</div>
+
+<!-- ==================== 5.1 ==================== -->
+<h2 id="sec51">5.1 频率特性的基本概念</h2>
+
+<h3 id="sec511">5.1.1 频率响应——从正弦输入稳态输出讲起</h3>
+
+<p><strong>人话版</strong>：你给一个系统输入不同频率的正弦波，看它的输出是什么样子的。系统对低频信号和高频信号的反应完全不同——这就像人的耳朵：能听到 20Hz~20kHz 的声音，超出这个范围就"听不见"了。</p>
+
+<p><strong>数学定义</strong>：对于一个稳定的线性定常系统，当输入为正弦信号 \(r(t) = A\sin(\omega t)\) 时，其<strong>稳态输出</strong>是同频率的正弦信号，但幅值和相位发生了变化：</p>
+
+<div class="math-block">\[c_{ss}(t) = A \cdot |G(j\omega)| \cdot \sin(\omega t + \angle G(j\omega))\]</div>
+
+<p>其中：</p>
+<ul>
+  <li>\(|G(j\omega)|\) 称为<strong>幅频特性</strong>——输出幅值与输入幅值之比</li>
+  <li>\(\angle G(j\omega)\) 称为<strong>相频特性</strong>——输出与输入的相位差</li>
+</ul>
+
+<p><strong>通俗理解</strong>：系统就像一个"滤波器+延迟器"的组合。幅频特性告诉你系统对某个频率的信号放大了多少倍（或者衰减了多少），相频特性告诉你信号经过系统后"迟到"了多少。</p>
+
+<img src="figures/fig5_1_sine_response.png" alt="正弦响应">
+<p class="fig-cap">图 5-1：正弦输入经过一阶惯性环节 \(G(s)=1/(s+1)\) 后的稳态响应。注意输出信号的幅值变小了（衰减），相位也"迟到"了（滞后），但频率保持不变。</p>
+
+<div class="box-green">
+  <p><strong>关键结论</strong>：频率响应是系统在<strong>稳态</strong>下的行为——暂态部分随时间衰减消失后，留下的就是频率响应。</p>
+</div>
+
+<h3 id="sec512">5.1.2 频率特性——幅频特性 + 相频特性</h3>
+
+<p>用 \(s = j\omega\) 代入传递函数 \(G(s)\)，就得到了<strong>频率特性</strong> \(G(j\omega)\)：</p>
+
+<div class="math-block">\[G(j\omega) = G(s)\big|_{s=j\omega}\]</div>
+
+<p>它是一个复数，可以写成三种等价形式：</p>
+
+<table>
+  <tr><th>形式</th><th>表达式</th><th>含义</th></tr>
+  <tr><td>直角坐标</td><td>\(G(j\omega) = P(\omega) + jQ(\omega)\)</td><td>实部 + 虚部</td></tr>
+  <tr><td>极坐标</td><td>\(G(j\omega) = A(\omega) \angle \varphi(\omega)\)</td><td>幅值 + 相位</td></tr>
+  <tr><td>指数形式</td><td>\(G(j\omega) = A(\omega) e^{j\varphi(\omega)}\)</td><td>幅值 × 相位因子</td></tr>
+</table>
+
+<p>其中：</p>
+<ul>
+  <li>\(A(\omega) = |G(j\omega)| = \sqrt{P^2 + Q^2}\) —— <strong>幅频特性</strong></li>
+  <li>\(\varphi(\omega) = \angle G(j\omega) = \arctan(Q/P)\) —— <strong>相频特性</strong></li>
+</ul>
+
+<div class="box-blue">
+  <p><strong>为什么用 \(j\omega\) 代替 \(s\)？</strong>拉普拉斯变换中 \(s = \sigma + j\omega\)，当只关心稳态正弦响应时，\(\sigma = 0\)（不衰减），剩下 \(j\omega\)。物理上，\(j\omega\) 就是"纯正弦"的频率分量。</p>
+</div>
+
+<h3 id="sec513">5.1.3 频率特性的图形表示——为什么需要图形化</h3>
+
+<p>频率特性是一组关于 \(\omega\) 的函数，直接看数学表达式很抽象。图形化的好处是：</p>
+<ul>
+  <li><strong>一目了然</strong>：系统的"脾气"在一张图中展现</li>
+  <li><strong>便于设计</strong>：校正器的设计往往在图形上完成</li>
+  <li><strong>通用语言</strong>：工程师之间用图形交流</li>
+</ul>
+
+<table>
+  <tr><th>图形</th><th>坐标</th><th>特点</th><th>适用场景</th></tr>
+  <tr>
+    <td><strong>Nyquist 图</strong></td>
+    <td>\(G(j\omega)\) 在复平面上的轨迹</td>
+    <td>一条闭合曲线，直观展示稳定性</td>
+    <td>稳定判据、概念理解</td>
+  </tr>
+  <tr>
+    <td><strong>Bode 图</strong></td>
+    <td>幅值(dB) vs \(\lg\omega\)，相位(°) vs \(\lg\omega\)</td>
+    <td>渐近线法快速绘制，工程最常用</td>
+    <td>系统分析、校正设计</td>
+  </tr>
+  <tr>
+    <td><strong>Nichols 图</strong></td>
+    <td>幅值(dB) vs 相位(°)，\(\omega\) 为参变量</td>
+    <td>一张图同时看幅值和相位</td>
+    <td>闭环分析、鲁棒设计</td>
+  </tr>
+</table>
+
+<div class="box-yellow">
+  <p><strong>类比</strong>：Nyquist 图像"雷达扫描图"（极坐标轨迹），Bode 图像"听力图"（横轴是频率），Nichols 图像"心电图"（幅值-相位关系）。</p>
+</div>
+
+<hr>
+
+<!-- ==================== 5.2 ==================== -->
+<h2 id="sec52">5.2 幅相频率特性（Nyquist 图）</h2>
+
+<h3 id="sec521">5.2.1 典型环节的幅相特性曲线</h3>
+
+<p>将 \(G(j\omega)\) 在复平面上以 \(\omega\) 为参变量（\(\omega: 0 \to +\infty\)）画出的轨迹，就是 Nyquist 图。</p>
+
+<h4>（1）比例环节 \(G(s) = K\)</h4>
+<div class="math-block">\[G(j\omega) = K = K + j0\]</div>
+<p>就是一个点 \((K, 0)\)，不随频率变化。</p>
+<img src="figures/fig5_2a_nyquist_proportional.png" alt="比例环节Nyquist">
+
+<h4>（2）积分环节 \(G(s) = \frac{1}{s}\)</h4>
+<div class="math-block">\[G(j\omega) = \frac{1}{j\omega} = 0 - j\frac{1}{\omega}\]</div>
+<ul>
+  <li>\(\omega \to 0^+\)：\(G(j\omega) \to -j\infty\)（沿负虚轴向下无穷远）</li>
+  <li>\(\omega \to +\infty\)：\(G(j\omega) \to 0\)（趋向原点）</li>
+  <li>整条轨迹就是<strong>负虚轴</strong></li>
+</ul>
+<img src="figures/fig5_2b_nyquist_integral.png" alt="积分环节Nyquist">
+
+<h4>（3）惯性环节 \(G(s) = \frac{1}{Ts+1}\)</h4>
+<div class="math-block">\[G(j\omega) = \frac{1}{1+j\omega T} = \frac{1}{1+(\omega T)^2} - j\frac{\omega T}{1+(\omega T)^2}\]</div>
+<ul>
+  <li>\(\omega = 0\)：\(G = 1 + j0\)（起点在正实轴上）</li>
+  <li>\(\omega = 1/T\)：\(G = 0.5 - j0.5\)（半圆最低点）</li>
+  <li>\(\omega \to \infty\)：\(G \to 0\)（趋向原点）</li>
+</ul>
+<p><strong>关键结论</strong>：惯性环节的 Nyquist 图是一个<strong>第四象限的半圆</strong>。</p>
+<img src="figures/fig5_2c_nyquist_inertia.png" alt="惯性环节Nyquist">
+
+<h4>（4）振荡环节 \(G(s) = \frac{1}{s^2 + 2\zeta s + 1}\)</h4>
+<p>振荡环节的 Nyquist 图形状受阻尼比 \(\zeta\) 的显著影响：</p>
+<ul>
+  <li>\(\zeta\) 小时，曲线"鼓"得厉害（谐振峰大）</li>
+  <li>\(\zeta\) 大时，曲线接近惯性环节</li>
+</ul>
+<img src="figures/fig5_2d_nyquist_oscillation.png" alt="振荡环节Nyquist">
+<p class="fig-cap">图 5-2d：不同 \(\zeta\) 下的振荡环节 Nyquist 图。注意 \(\zeta=0.2\) 时离原点最远，说明谐振现象明显。</p>
+
+<h4>（5）时滞环节 \(G(s) = e^{-\tau s}\)</h4>
+<div class="math-block">\[|G(j\omega)| = 1, \quad \angle G(j\omega) = -\tau\omega\]</div>
+<ul>
+  <li>幅值恒为 1（轨迹在单位圆上）</li>
+  <li>相位随频率线性滞后，无限旋转</li>
+</ul>
+<img src="figures/fig5_2e_nyquist_delay.png" alt="时滞环节Nyquist">
+<p class="fig-cap">图 5-2e：时滞环节在单位圆上不断旋转，相位无界滞后。这是纯滞后系统的典型特征——高频段相位"烂得一塌糊涂"，给控制带来极大困难。</p>
+
+<h4>Nyquist 图汇总</h4>
+<table>
+  <tr><th>环节</th><th>传递函数</th><th>Nyquist 图形状</th><th>起点 (\(\omega\to0\))</th><th>终点 (\(\omega\to\infty\))</th></tr>
+  <tr><td>比例</td><td>\(K\)</td><td>一个点</td><td>\((K,0)\)</td><td>\((K,0)\)</td></tr>
+  <tr><td>积分</td><td>\(1/s\)</td><td>负虚轴</td><td>\(-j\infty\)</td><td>原点</td></tr>
+  <tr><td>微分</td><td>\(s\)</td><td>正虚轴</td><td>原点</td><td>\(+j\infty\)</td></tr>
+  <tr><td>惯性</td><td>\(1/(Ts+1)\)</td><td>第四象限半圆</td><td>\((1,0)\)</td><td>原点</td></tr>
+  <tr><td>振荡</td><td>\(1/(s^2+2\zeta s+1)\)</td><td>第三/四象限曲线</td><td>\((1,0)\)</td><td>原点</td></tr>
+  <tr><td>时滞</td><td>\(e^{-\tau s}\)</td><td>单位圆上旋转</td><td>\((1,0)\)</td><td>绕原点旋转</td></tr>
+</table>
+
+<h3 id="sec522">5.2.2 开环系统幅相特性曲线</h3>
+
+<p>开环传递函数 \(G(s)H(s)\) 是各个环节串联而成。</p>
+<p><strong>绘制步骤</strong>：</p>
+<ol>
+  <li>确定 \(\omega \to 0\) 的起点：由<strong>型别</strong>（积分环节个数）和增益决定</li>
+  <li>确定 \(\omega \to \infty\) 的终点：由<strong>分母阶次 - 分子阶次</strong>决定</li>
+  <li>连接并判断穿越实轴的位置</li>
+</ol>
+
+<img src="figures/fig5_x_nyquist_openloop_summary.png" alt="开环Nyquist图">
+<p class="fig-cap">图 5-2f：开环 Nyquist 图随增益 \(K\) 的变化。\(K\) 增大时，曲线整体"膨胀"，可能包围 \((-1,j0)\) 点从而导致不稳定。</p>
+
+<hr>
+
+<!-- ==================== 5.3 BODE ⭐ ==================== -->
+<h2 id="sec53">5.3 对数频率特性（Bode 图）⭐重点</h2>
+
+<blockquote>
+  <p><strong>为什么 Bode 图是工程界的"标准配置"？</strong></p>
+  <p>1. <strong>渐近线法</strong>——用直线段逼近曲线，手绘只需几分钟<br>
+  2. <strong>乘法变加法</strong>——串联环节的 Bode 图 = 各环节 Bode 图的纵向叠加<br>
+  3. <strong>频率轴对数化</strong>——横跨好几个数量级的频率范围都能清晰展示</p>
+</blockquote>
+
+<h3 id="sec531">5.3.1 典型环节的 Bode 图</h3>
+
+<p>Bode 图由上下两张图组成：</p>
+<ul>
+  <li><strong>幅频图</strong>：纵轴 \(L(\omega) = 20\lg|G(j\omega)|\)（单位：分贝 dB），横轴 \(\lg\omega\)</li>
+  <li><strong>相频图</strong>：纵轴 \(\varphi(\omega) = \angle G(j\omega)\)（单位：度 °），横轴 \(\lg\omega\)</li>
+</ul>
+
+<h4>（1）比例环节 \(G(s) = K\)</h4>
+<ul>
+  <li><strong>幅频</strong>：\(L(\omega) = 20\lg K\)，一条水平线</li>
+  <li><strong>相频</strong>：\(\varphi(\omega) = 0°\)，恒为零</li>
+</ul>
+<img src="figures/fig5_3a_bode_proportional.png" alt="比例环节Bode">
+
+<h4>（2）积分环节 \(G(s) = \frac{1}{s}\)</h4>
+<ul>
+  <li><strong>幅频</strong>：\(L(\omega) = 20\lg\frac{1}{\omega} = -20\lg\omega\)，斜率为 <strong>\(-20\) dB/dec</strong></li>
+  <li><strong>相频</strong>：\(\varphi(\omega) = -90°\)，恒为 -90°</li>
+</ul>
+<img src="figures/fig5_3b_bode_integral.png" alt="积分环节Bode">
+<p class="fig-cap">图 5-3b：积分环节的幅频特征是 −20 dB/dec 的直线，相位永远是 −90°。记住这个"基准斜率"，它是理解复杂 Bode 图的基础。</p>
+
+<h4>（3）惯性环节 \(G(s) = \frac{1}{Ts+1}\) ⭐</h4>
+<ul>
+  <li><strong>转折频率</strong>：\(\omega_T = 1/T\)</li>
+  <li><strong>渐近线</strong>：
+    <ul>
+      <li>\(\omega \ll 1/T\)（低频段）：\(L(\omega) \approx 0\) dB（水平线）</li>
+      <li>\(\omega \gg 1/T\)（高频段）：\(L(\omega) \approx -20\lg(\omega T)\)（<strong>−20 dB/dec 斜线</strong>）</li>
+    </ul>
+  </li>
+  <li><strong>精确值在转折频率处</strong>：\(L(\omega_T) = -3\) dB，\(\varphi(\omega_T) = -45°\)</li>
+</ul>
+<img src="figures/fig5_3c_bode_inertia.png" alt="惯性环节Bode">
+<p class="fig-cap">图 5-3c：渐近线（虚线）与精确曲线（实线）的对比。在转折频率 \(\omega_T = 1/T\) 处，精确值比渐近线低约 3 dB。这个"3 dB 误差"在工程上通常可以接受。</p>
+
+<h4>（4）振荡环节 \(G(s) = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}\)</h4>
+<ul>
+  <li><strong>渐近线</strong>：
+    <ul>
+      <li>\(\omega \ll \omega_n\)：\(L(\omega) \approx 0\) dB</li>
+      <li>\(\omega \gg \omega_n\)：\(L(\omega) \approx -40\lg(\omega/\omega_n)\)（<strong>−40 dB/dec</strong>）</li>
+    </ul>
+  </li>
+  <li><strong>谐振峰</strong>：当 \(\zeta < 0.707\) 时，在 \(\omega_r = \omega_n\sqrt{1-2\zeta^2}\) 处出现峰值</li>
+  <li>谐振峰值 \(M_r = \frac{1}{2\zeta\sqrt{1-\zeta^2}}\)</li>
+</ul>
+<img src="figures/fig5_3d_bode_oscillation.png" alt="振荡环节Bode">
+<p class="fig-cap">图 5-3d：阻尼比 \(\zeta\) 越小，谐振峰越尖锐。\(\zeta \geq 0.707\) 后无谐振峰，曲线光滑下降。<strong>工程经验</strong>：大多数系统希望 \(\zeta \approx 0.7\)，此时超调约 5%，谐振峰几乎不存在。</p>
+
+<h4>（5）时滞环节 \(G(s) = e^{-\tau s}\)</h4>
+<ul>
+  <li><strong>幅频</strong>：\(L(\omega) = 0\) dB（恒为 0，无衰减）</li>
+  <li><strong>相频</strong>：\(\varphi(\omega) = -\tau\omega\)（随频率线性滞后，无界）</li>
+</ul>
+<img src="figures/fig5_3e_bode_delay.png" alt="时滞环节Bode">
+
+<h4>（6）微分环节</h4>
+<ul>
+  <li>\(G(s) = s\)：\(L(\omega) = +20\lg\omega\)，斜率为 <strong>+20 dB/dec</strong>；\(\varphi = +90°\)</li>
+  <li>是积分环节关于 0 dB 线的镜像</li>
+</ul>
+<img src="figures/fig5_3f_bode_derivative.png" alt="微分环节Bode">
+
+<h4>典型环节 Bode 图速查表</h4>
+<table>
+  <tr><th>环节</th><th>传递函数</th><th>幅频特征</th><th>相频特征</th><th>转折频率</th></tr>
+  <tr><td>比例</td><td>\(K\)</td><td>水平线 \(20\lg K\)</td><td>0°</td><td>无</td></tr>
+  <tr><td>积分</td><td>\(1/s\)</td><td>−20 dB/dec，过 (1,0)</td><td>−90°</td><td>无</td></tr>
+  <tr><td>微分</td><td>\(s\)</td><td>+20 dB/dec，过 (1,0)</td><td>+90°</td><td>无</td></tr>
+  <tr><td>惯性</td><td>\(1/(Ts+1)\)</td><td>低频0dB → 高频 −20 dB/dec</td><td>0° → −90°</td><td>\(\omega=1/T\)</td></tr>
+  <tr><td>一阶微分</td><td>\(Ts+1\)</td><td>低频0dB → 高频 +20 dB/dec</td><td>0° → +90°</td><td>\(\omega=1/T\)</td></tr>
+  <tr><td>振荡</td><td>\(\frac{\omega_n^2}{s^2+2\zeta\omega_n s+\omega_n^2}\)</td><td>低频0dB → 高频 −40 dB/dec</td><td>0° → −180°</td><td>\(\omega=\omega_n\)</td></tr>
+  <tr><td>时滞</td><td>\(e^{-\tau s}\)</td><td>0 dB（无衰减）</td><td>线性滞后</td><td>无</td></tr>
+</table>
+
+<h3 id="sec532">5.3.2 开环系统 Bode 图的绘制——渐近线法</h3>
+
+<p><strong>核心思想</strong>：将开环传递函数分解为基本环节的乘积 → 每个环节独立画出渐近线 → 纵向叠加。</p>
+
+<div class="box-blue">
+  <p><strong>标准绘制步骤</strong>：</p>
+  <p><strong>Step 1</strong>：将 \(G(s)H(s)\) 写成 <strong>Bode 标准型</strong>（每个因子的常数项为 1）</p>
+  <p><strong>Step 2</strong>：从小到大列出所有<strong>转折频率</strong> \(\omega_i = 1/T_i\)</p>
+  <p><strong>Step 3</strong>：确定<strong>起始段</strong>（最低频段）的斜率和位置：斜率 = \(-\nu \times 20\) dB/dec（\(\nu\) = 型别），\(\omega=1\) 处幅值为 \(20\lg K\)</p>
+  <p><strong>Step 4</strong>：每经过一个转折频率，斜率改变：惯性 −20，一阶微分 +20，振荡 −40 dB/dec</p>
+  <p><strong>Step 5</strong>：绘制相频曲线（各环节相位叠加）</p>
+  <p><strong>Step 6</strong>：（可选）在转折频率处做 ±3 dB 修正</p>
+</div>
+
+<div class="box-yellow">
+  <p><strong>例题 5-1</strong>：绘制 \(G(s)H(s) = \dfrac{10(s+1)}{s(s+10)}\) 的 Bode 图。</p>
+  <p><strong>解</strong>：</p>
+  <ol>
+    <li>写成标准型：\(G(s)H(s) = \dfrac{10(s+1)}{s(s+10)} = \dfrac{1 \cdot (s+1)}{s \cdot (s/10+1)}\)</li>
+    <li>\(K = 1\)（0 dB），积分 \(1/s\) → −20 dB/dec，一阶微分 \((s+1)\) → 转折 \(\omega_1 = 1\)，惯性 \(1/(s/10+1)\) → 转折 \(\omega_2 = 10\)</li>
+    <li>逐段叠加：\(\omega < 1\)：−20；\(1<\omega<10\)：0；\(\omega>10\)：−20 dB/dec</li>
+  </ol>
+</div>
+
+<img src="figures/fig5_3g_openloop_bode_construction.png" alt="开环Bode图绘制">
+<p class="fig-cap">图 5-3g：渐近线（虚线）与精确曲线（实线）对比。渐近线法的误差通常在 3 dB 以内，工程上足够使用。</p>
+
+<h3 id="sec533">5.3.3 由对数幅频特性曲线确定传递函数——反问题</h3>
+
+<p>这是频域分析中非常有用的技能：<strong>看到实测的 Bode 图，反推出系统的传递函数</strong>。</p>
+<p><strong>方法</strong>：</p>
+<ol>
+  <li>看<strong>低频段斜率</strong> → 确定型别 \(\nu\)（积分环节个数）</li>
+  <li>看<strong>低频段高度</strong> → 确定增益 \(K\)</li>
+  <li>看<strong>斜率变化点</strong> → 确定各转折频率</li>
+  <li>看<strong>斜率变化量</strong> → 确定环节类型（−20 = 惯性，+20 = 一阶微分，−40 = 振荡）</li>
+  <li>看<strong>谐振峰</strong> → 推算 \(\zeta\)</li>
+</ol>
+
+<div class="box-yellow">
+  <p><strong>例题 5-2</strong>：实测对数幅频渐近线：\(\omega<2\) 时 −20 dB/dec（\(\omega=1\) 时 \(L=20\) dB），\(2<\omega<20\) 时 −40 dB/dec，\(\omega>20\) 时 −60 dB/dec。求传递函数。</p>
+  <p><strong>解</strong>：低频 −20 → \(\nu=1\)；\(20\lg K=20\) → \(K=10\)；\(\omega_1=2\) 斜率 −20→−40 → 惯性 \(T_1=0.5\)；\(\omega_2=20\) 斜率 −40→−60 → 惯性 \(T_2=0.05\)</p>
+  <div class="math-block">\[\therefore G(s) = \frac{10}{s(0.5s+1)(0.05s+1)}\]</div>
+</div>
+
+<h3 id="sec534">5.3.4 最小相位系统和非最小相位系统</h3>
+
+<p><strong>人话版</strong>：两个系统可以有<strong>完全相同的幅频特性</strong>，但相频特性不同。相位滞后更少的那个就是"最小相位系统"。</p>
+
+<ul>
+  <li><strong>最小相位系统</strong>：所有零点和极点都在左半 \(s\) 平面</li>
+  <li><strong>非最小相位系统</strong>：至少有一个零点或极点在右半 \(s\) 平面</li>
+</ul>
+
+<img src="figures/fig5_3h_minphase_comparison.png" alt="最小相位对比">
+<p class="fig-cap">图 5-3h：两个系统的幅频完全相同，但非最小相位系统（虚线）的相位滞后远大于最小相位系统。右半平面零点导致"额外的相位滞后"。</p>
+
+<div class="box-green">
+  <p><strong>为什么要区分？</strong></p>
+  <ol>
+    <li>最小相位系统<strong>容易控制</strong>——相位滞后小，稳定裕度大</li>
+    <li>非最小相位系统的相位滞后<strong>无法通过增益补偿</strong></li>
+    <li><strong>工程经验</strong>：时滞、倒立摆、锅炉液位等都是典型的非最小相位系统</li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ==================== 5.4 ==================== -->
+<h2 id="sec54">5.4 频域稳定判据</h2>
+
+<blockquote><p><strong>核心问题</strong>：不用求解闭环极点，如何用开环频率特性判断闭环系统是否稳定？</p></blockquote>
+
+<h3 id="sec541">5.4.1 奈奎斯特稳定判据</h3>
+
+<p><strong>理论基础</strong>：柯西幅角原理 → 映射定理</p>
+<p>令 \(F(s) = 1 + G(s)H(s)\)（特征多项式），\(D\) 取为包含整个右半 \(s\) 平面的<strong>Nyquist 围线</strong>。则 \(F(s)\) 绕原点次数 = \(G(s)H(s)\) 绕 \((-1, j0)\) 点的次数。</p>
+
+<div class="box-blue">
+  <p><strong>奈奎斯特稳定判据</strong>：</p>
+  <div class="math-block">\[Z = N + P\]</div>
+  <ul>
+    <li>\(Z\)：闭环系统在右半 \(s\) 平面的极点数（\(Z=0\) = 稳定）</li>
+    <li>\(N\)：开环 Nyquist 曲线<strong>顺时针</strong>包围 \((-1, j0)\) 点的圈数</li>
+    <li>\(P\)：开环系统在右半 \(s\) 平面的极点数（通常 \(P=0\)）</li>
+  </ul>
+</div>
+
+<img src="figures/fig5_4a_nyquist_criterion.png" alt="奈奎斯特判据">
+<p class="fig-cap">图 5-4a：左图为 \(s\) 平面上的 Nyquist 围线（包围整个右半平面），右图为映射到 \(GH\) 平面上的 Nyquist 曲线。</p>
+
+<h3 id="sec542">5.4.2 奈奎斯特稳定判据的应用</h3>
+
+<p>当开环系统含有积分环节（\(s=0\) 处有极点）时，Nyquist 围线需用一个<strong>无穷小半径的半圆</strong>绕过去。</p>
+
+<img src="figures/fig5_4b_nyquist_with_integrator.png" alt="含积分Nyquist">
+<p class="fig-cap">图 5-4b：含积分环节时，Nyquist 曲线在低频段通过一个半径为无穷大的半圆（黄色）从 \(\omega \to 0^-\) 连接到 \(\omega \to 0^+\)。</p>
+
+<div class="box-green">
+  <p><strong>Nyquist 判据使用口诀</strong>：</p>
+  <ol>
+    <li>画开环 Nyquist 图（\(\omega = 0^+ \to +\infty\) 即可）</li>
+    <li>数 \(N\)：<strong>顺时针</strong>包围 \((-1,j0)\) 的圈数</li>
+    <li>数 \(P\)：开环有几个右半平面极点</li>
+    <li>算 \(Z = N + P\)，\(Z = 0\) 才稳定</li>
+  </ol>
+</div>
+
+<h3 id="sec543">5.4.3 对数稳定判据</h3>
+
+<p><strong>核心思想</strong>：在 Bode 图上也能判断稳定性：在 <strong>\(L(\omega) > 0\) dB 的频率范围内</strong>，相频曲线 \(\varphi(\omega)\) 对 \(-180°\) 线的<strong>正穿越次数比负穿越次数多 \(P/2\) 次</strong>。</p>
+
+<p>对于常见的 \(P=0\) 系统：在穿越频率 \(\omega_c\) 处，\(\varphi(\omega_c) > -180°\) 即稳定。</p>
+
+<hr>
+
+<!-- ==================== 5.5 ⭐ ==================== -->
+<h2 id="sec55">5.5 稳定裕度 ⭐重点</h2>
+
+<blockquote><p><strong>为什么需要稳定裕度？</strong>光知道"稳定还是不稳定"不够，还需要知道"离不稳定还有多远"——就像你开车，不光要知道"会不会翻车"，还要知道"弯道离极限还有多少余量"。</p></blockquote>
+
+<h3 id="sec551">5.5.1 稳定裕度的定义</h3>
+
+<p><strong>（1）幅值裕度 \(K_g\)（Gain Margin, GM）</strong></p>
+<p>在<strong>相位穿越频率 \(\omega_g\)</strong>（\(\varphi(\omega_g) = -180°\)）处：</p>
+<div class="math-block">\[K_g = \frac{1}{|G(j\omega_g)H(j\omega_g)|}, \quad GM = 20\lg K_g \text{ dB}\]</div>
+<p><strong>物理意义</strong>：增益还能增大 \(K_g\) 倍才到临界稳定。</p>
+
+<p><strong>（2）相位裕度 \(\gamma\)（Phase Margin, PM）</strong></p>
+<p>在<strong>穿越频率 \(\omega_c\)</strong>（\(|G(j\omega_c)H(j\omega_c)| = 1\)）处：</p>
+<div class="math-block">\[\gamma = 180° + \varphi(\omega_c)\]</div>
+<p><strong>物理意义</strong>：相位还能滞后 \(\gamma\) 度才到临界稳定。</p>
+
+<h3 id="sec552">5.5.2 稳定裕度的计算</h3>
+
+<img src="figures/fig5_5a_stability_margins_bode.png" alt="Bode稳定裕度">
+<p class="fig-cap">图 5-5a：Bode 图上的稳定裕度。绿色标注为相位裕度 PM（在 \(\omega_c\) 处），橙色标注为幅值裕度 GM（在 \(\omega_g\) 处）。</p>
+
+<img src="figures/fig5_5b_stability_margins_nyquist.png" alt="Nyquist稳定裕度">
+<p class="fig-cap">图 5-5b：Nyquist 图上的稳定裕度。PM 在单位圆交点处，GM 在负实轴交点处。Nyquist 曲线离 \((-1,j0)\) 越远，系统越稳定。</p>
+
+<table>
+  <tr><th>指标</th><th>最小值</th><th>推荐值</th><th>备注</th></tr>
+  <tr><td>相位裕度 PM</td><td>\(30°\)</td><td>\(40° \sim 60°\)</td><td>PM < 30° 超调大，PM > 60° 响应慢</td></tr>
+  <tr><td>幅值裕度 GM</td><td>\(6\) dB</td><td>\(10 \sim 20\) dB</td><td>GM < 6 dB 参数稍变就失稳</td></tr>
+</table>
+
+<div class="box-yellow">
+  <p><strong>例题 5-3</strong>：已知 \(G(s) = \dfrac{5}{s(s+1)(0.5s+1)}\)，求 PM 和 GM。</p>
+  <p><strong>解</strong>：\(\omega_c \approx 1.8\) rad/s，\(\varphi(\omega_c) \approx -192.9°\)，\(\gamma = 180° + (-192.9°) = -12.9°\) → <strong>不稳定！</strong></p>
+  <p>\(\omega_g \approx 1.41\)，\(GM \approx -5.1\) dB → PM < 0 且 GM < 0，系统不稳定，<strong>需要校正</strong>。</p>
+</div>
+
+<hr>
+
+<!-- ==================== 5.6 ==================== -->
+<h2 id="sec56">5.6 利用开环对数幅频特性分析系统性能</h2>
+
+<p>开环对数幅频曲线 \(L(\omega)\) 是控制工程师的"心电图"——把它分成三个频段来看。</p>
+
+<img src="figures/fig5_6_openloop_freq_regions.png" alt="三频段分析">
+<p class="fig-cap">图 5-6：开环对数幅频特性的三频段划分。低频看精度，中频看稳定性，高频看抗干扰。</p>
+
+<h3 id="sec561">5.6.1 \(L(\omega)\) 低频段——稳态误差</h3>
+
+<p>低频段斜率越陡、增益越高 → 稳态误差越小。</p>
+<ul>
+  <li><strong>斜率</strong> = \(-\nu \times 20\) dB/dec（\(\nu\) = 型别）：0 型有静差，I 型阶跃无静差，II 型斜坡也无静差</li>
+  <li><strong>高度</strong>：\(\omega=1\) 处的 \(L(1) = 20\lg K\)</li>
+</ul>
+
+<table>
+  <tr><th>系统型别</th><th>阶跃误差</th><th>斜坡误差</th><th>抛物线误差</th></tr>
+  <tr><td>0 型</td><td>\(\frac{1}{1+K_p}\)</td><td>\(\infty\)</td><td>\(\infty\)</td></tr>
+  <tr><td>I 型</td><td>0</td><td>\(\frac{1}{K_v}\)</td><td>\(\infty\)</td></tr>
+  <tr><td>II 型</td><td>0</td><td>0</td><td>\(\frac{1}{K_a}\)</td></tr>
+</table>
+
+<h3 id="sec562">5.6.2 \(L(\omega)\) 中频段——动态性能</h3>
+
+<p>中频段（穿越频率 \(\omega_c\) 附近）是<strong>决定动态性能的关键区域</strong>。</p>
+<ul>
+  <li>\(\omega_c\) 越大 → 响应越快，\(t_s \approx \frac{3\sim4}{\omega_c}\)</li>
+  <li>以 <strong>−20 dB/dec</strong> 穿过 0 dB 线 → 稳定裕度较好</li>
+  <li>以 −40 dB/dec 穿过 → PM 偏小；以 −60 dB/dec 穿过 → 几乎肯定不稳定</li>
+</ul>
+
+<div class="box-green">
+  <p><strong>工程口诀</strong>："−20 dB 过零线，系统稳定好调参"</p>
+</div>
+
+<h3 id="sec563">5.6.3 \(L(\omega)\) 高频段——抗干扰</h3>
+<p>高频段衰减越快 → 高频噪声被抑制得越好。<strong>理想形状</strong>：低频高增益 → 中频 −20 dB/dec → 高频快速衰减。</p>
+
+<hr>
+
+<!-- ==================== 5.7 + 5.8 ==================== -->
+<h2 id="sec57">5.7 闭环频率特性曲线</h2>
+
+<h3>5.7.1 用向量法求闭环频率特性</h3>
+<p>对于单位反馈系统：\(\Phi(j\omega) = \frac{G(j\omega)}{1 + G(j\omega)}\)。向量 \(G(j\omega)\) 与 \((-1, j0)\) 点的连线就是 \(1+G(j\omega)\)。</p>
+
+<h3>5.7.2 尼柯尔斯图线（Nichols Chart）</h3>
+<p>Nichols 图将 Bode 图的两张图合成一张——横轴相位 \(\varphi\)（°），纵轴幅值 \(L\)（dB），\(\omega\) 为参变量。叠加等 M 圆和等 N 圆后可直接读出闭环特性。</p>
+
+<h2 id="sec58">5.8 利用闭环频率特性分析系统性能</h2>
+
+<h3>5.8.1 闭环频率特性的几个特征量</h3>
+
+<img src="figures/fig5_7_closed_loop_response.png" alt="闭环频率特性">
+<p class="fig-cap">图 5-8：闭环频率特性的四个关键特征量——零频值 \(M(0)\)、谐振峰值 \(M_r\)、谐振频率 \(\omega_r\)、带宽 \(\omega_b\)。</p>
+
+<table>
+  <tr><th>特征量</th><th>符号</th><th>定义</th><th>物理意义</th></tr>
+  <tr><td>零频值</td><td>\(M(0)\)</td><td>\(\omega \to 0\) 的闭环增益</td><td>\(M(0)=1\) → 无静差</td></tr>
+  <tr><td>谐振峰值</td><td>\(M_r\)</td><td>闭环幅频最大值</td><td>\(M_r\) 越大，超调越大</td></tr>
+  <tr><td>谐振频率</td><td>\(\omega_r\)</td><td>\(M_r\) 对应的频率</td><td>反映振荡倾向</td></tr>
+  <tr><td>带宽</td><td>\(\omega_b\)</td><td>\(M\) 降到 −3 dB 时的频率</td><td>\(\omega_b\) 越大，响应越快</td></tr>
+</table>
+
+<h3>5.8.2 闭环频域指标与时域指标的关系</h3>
+
+<div class="math-block">\[M_r \approx \frac{1}{\sin\gamma}, \quad \sigma\% \approx 0.16 + 0.4(M_r - 1)\]</div>
+<div class="math-block">\[t_s \approx \frac{3\sim4}{\omega_c} \approx \frac{3\sim4}{\omega_b}, \quad \omega_b \approx \omega_c\]</div>
+
+<table>
+  <tr><th>应用场景</th><th>推荐 \(M_r\)</th><th>推荐 PM</th><th>推荐 \(\zeta\)</th></tr>
+  <tr><td>伺服系统</td><td>\(1.2 \sim 1.5\)</td><td>\(40° \sim 50°\)</td><td>\(0.4 \sim 0.6\)</td></tr>
+  <tr><td>过程控制</td><td>\(1.05 \sim 1.3\)</td><td>\(45° \sim 60°\)</td><td>\(0.5 \sim 0.7\)</td></tr>
+  <tr><td>航空航天</td><td>\(1.1 \sim 1.3\)</td><td>\(50° \sim 60°\)</td><td>\(0.6 \sim 0.8\)</td></tr>
+</table>
+
+<hr>
+
+<!-- ==================== 5.9 ⭐⭐⭐ ==================== -->
+<h2 id="sec59">5.9 频域法串联校正 ⭐⭐⭐ 核心</h2>
+
+<blockquote><p><strong>这是本章的终极目标</strong>：用前面所学的所有频域知识，来<strong>设计控制器</strong>改善系统性能。如果说 5.1~5.8 是"诊断"，那么 5.9 就是"开药方"。</p></blockquote>
+
+<h3>校正设计流程</h3>
+<img src="figures/fig5_x_correction_design_flow.png" alt="校正流程">
+<p class="fig-cap">图 5-9a：串联校正设计的完整流程。核心思路：发现问题 → 选择校正方案 → 计算参数 → 验证效果。</p>
+
+<h3 id="sec591">5.9.1 相位超前校正（Lead Compensator）</h3>
+
+<div class="box-yellow">
+  <p><strong>原理——相当于给系统"提神药"</strong></p>
+  <p><strong>问题场景</strong>：系统太"慢"（\(\omega_c\) 太小），或者相位裕度不够。</p>
+</div>
+
+<p><strong>超前校正传递函数</strong>：</p>
+<div class="math-block">\[G_c(s) = \frac{\alpha Ts + 1}{Ts + 1}, \quad \alpha > 1\]</div>
+
+<p><strong>核心参数</strong>：\(\alpha\) 决定最大超前角 \(\phi_m\)，\(T\) 决定超前角出现的位置。</p>
+
+<div class="math-block">\[\phi_m = \arcsin\frac{\alpha - 1}{\alpha + 1}, \quad \omega_m = \frac{1}{T\sqrt{\alpha}}\]</div>
+
+<p><strong>Bode 图特征</strong>：在中频段提供<strong>正相角</strong>（相位超前），同时提供 +20 dB/dec 的幅值抬升。最大相角出现在两个转折频率的<strong>几何中点</strong>。</p>
+
+<div class="box-blue">
+  <p><strong>设计步骤</strong>：</p>
+  <ol>
+    <li>根据稳态误差要求确定开环增益 \(K\)</li>
+    <li>绘制未校正系统的 Bode 图，求当前 PM 和 \(\omega_c\)</li>
+    <li>确定需要补偿的相位超前角 \(\phi_m = \gamma_{要求} - \gamma_{当前} + (5°\sim12°)\)<br>
+    <em>（加 \(5°\sim12°\) 的补偿余量，因为超前校正会抬高 \(\omega_c\)）</em></li>
+    <li>由 \(\phi_m\) 求 \(\alpha\)：\(\alpha = \dfrac{1+\sin\phi_m}{1-\sin\phi_m}\)</li>
+    <li>在 \(\omega_m = \omega_c^{new}\) 处提供最大超前角，确定 \(T = \dfrac{1}{\omega_m\sqrt{\alpha}}\)</li>
+    <li>验证校正后性能，不满足则返回调整</li>
+  </ol>
+</div>
+
+<div class="box-yellow">
+  <p><strong>例题 5-4（超前校正）</strong>：\(G_0(s) = \dfrac{10}{s(s+1)}\)，要求 \(K_v \geq 10\)，\(\gamma \geq 45°\)。</p>
+  <p><strong>解</strong>：\(K_v=10\) ✓。Bode 图得 \(\omega_c \approx 3.0\) rad/s，\(\gamma_{当前} \approx 18°\)（不够！）。\(\phi_m = 45° - 18° + 7° = 34°\)。\(\alpha = \frac{1+\sin 34°}{1-\sin 34°} \approx 3.5\)。超前校正器：\(G_c(s) = \dfrac{0.5s+1}{0.14s+1}\)。</p>
+</div>
+
+<img src="figures/fig5_9_correction_before_after.png" alt="校正前后对比">
+<p class="fig-cap">图 5-9b：校正前后 Bode 图对比。校正后 PM 从 18.4° 提升到 47.5°，\(\omega_c\) 也增大了，系统既快又稳。</p>
+
+<div class="box-green">
+  <p><strong>超前校正口诀</strong>："超前校正是提神药，相位提升带宽大；缺点是放大高频噪声，噪声大的系统要谨慎。"</p>
+</div>
+
+<h3 id="sec592">5.9.2 相位滞后校正（Lag Compensator）</h3>
+
+<div class="box-yellow">
+  <p><strong>原理——相当于"瘦身不减速"</strong></p>
+  <p><strong>问题场景</strong>：稳态精度不够，或需降低高频增益来抑制噪声，但<strong>不能降低带宽</strong>。</p>
+</div>
+
+<p><strong>滞后校正传递函数</strong>：</p>
+<div class="math-block">\[G_c(s) = \frac{Ts + 1}{\beta Ts + 1}, \quad \beta > 1\]</div>
+
+<p><strong>关键设计思想</strong>：把滞后校正的"负相角"放在远低于 \(\omega_c\) 的地方（\(1/T = \omega_c/10 \sim \omega_c/5\)），使其在 \(\omega_c\) 附近<strong>几乎不影响相位</strong>，但利用高频衰减作用压低 \(\omega_c\) 来提高 PM。</p>
+
+<div class="box-yellow">
+  <p><strong>例题 5-5（滞后校正）</strong>：\(G_0(s) = \dfrac{10}{s(s+1)(0.5s+1)}\)，要求 \(K_v=10\)，\(\gamma \geq 40°\)。</p>
+  <p><strong>解思路</strong>：当前 \(\omega_c \approx 2.5\) rad/s，\(\gamma_{当前} \approx -10°\)（不稳定！）。选新 \(\omega_c^{new}=0.8\) rad/s（此处 PM=50°），\(\beta = |G_0(j0.8)| \approx 8\)，取 \(\beta=10\)。\(T = 10/0.8 = 12.5\)。滞后校正器：\(G_c(s) = \dfrac{12.5s+1}{125s+1}\)。</p>
+</div>
+
+<div class="box-green">
+  <p><strong>滞后校正口诀</strong>："滞后校正是瘦身术，低频不变高频削；相位损失要避开，远离 ω_c 是关键。"</p>
+</div>
+
+<h3 id="sec593">5.9.3 串联滞后-超前校正（Lag-Lead Compensator）</h3>
+
+<p>当系统<strong>同时需要</strong>提高稳定裕度（PM）和提高稳态精度时使用。</p>
+
+<div class="math-block">\[G_c(s) = \underbrace{\frac{T_1 s + 1}{\alpha T_1 s + 1}}_{\text{超前部分}} \cdot \underbrace{\frac{T_2 s + 1}{\beta T_2 s + 1}}_{\text{滞后部分}}, \quad \alpha > 1, \beta > 1\]</div>
+
+<ul>
+  <li><strong>超前部分</strong> → 提供正相角，提升 PM，增大 \(\omega_c\)</li>
+  <li><strong>滞后部分</strong> → 提高低频增益，改善稳态精度</li>
+  <li>两条校正作用在<strong>不同的频率范围</strong>，互不干扰</li>
+</ul>
+
+<h3 id="sec594">5.9.4 串联 PID 校正——PID 的频域解释</h3>
+
+<p>PID 控制在第 5 章的框架下就是<strong>超前-滞后校正的特例</strong>。</p>
+
+<div class="math-block">\[G_{PID}(s) = K_p + \frac{K_i}{s} + K_d s = \frac{K_d s^2 + K_p s + K_i}{s}\]</div>
+
+<img src="figures/fig5_9_pid_frequency.png" alt="PID频域">
+<p class="fig-cap">图 5-9d：P、PI、PID 三种控制器的频域特性对比。PI 提供低频高增益（消除静差），PID 兼顾低频精度和高频相位补偿。</p>
+
+<table>
+  <tr><th>环节</th><th>频域贡献</th><th>作用</th></tr>
+  <tr><td><strong>P（比例）</strong></td><td>全频段等幅抬升</td><td>加快响应</td></tr>
+  <tr><td><strong>I（积分）</strong></td><td>低频段 +20 dB/dec 高增益，−90° 相位</td><td>消除稳态误差</td></tr>
+  <tr><td><strong>D（微分）</strong></td><td>高频段 +20 dB/dec，+90° 相位</td><td>相位超前，抑制超调</td></tr>
+</table>
+
+<div class="box-green">
+  <p><strong>PID 参数整定口诀（频域版）</strong>：</p>
+  <ol>
+    <li>先调 \(K_p\)：整体上下平移 Bode 图（改变 \(\omega_c\)）</li>
+    <li>再加 \(K_i\)：在低频段增加 +20 dB/dec 斜率，拉高低频增益</li>
+    <li>最后 \(K_d\)：在中频段提供相位超前，提高 PM</li>
+  </ol>
+</div>
+
+<h3>三种校正方式对比总结</h3>
+
+<img src="figures/fig5_9_lead_lag_comparison.png" alt="超前vs滞后">
+<p class="fig-cap">图 5-9e：超前校正（上排）与滞后校正（下排）的 Bode 图对比。超前校正提供正相角但抬升高频，滞后校正衰减高频但引入负相角。</p>
+
+<table>
+  <tr><th>特性</th><th>超前校正</th><th>滞后校正</th><th>滞后-超前校正</th></tr>
+  <tr><td>传递函数</td><td>\(\frac{\alpha Ts+1}{Ts+1}\), \(\alpha>1\)</td><td>\(\frac{Ts+1}{\beta Ts+1}\), \(\beta>1\)</td><td>两者的乘积</td></tr>
+  <tr><td>相角作用</td><td>正相角（超前）</td><td>负相角（滞后）</td><td>中频超前，低频滞后</td></tr>
+  <tr><td>对 \(\omega_c\) 影响</td><td><strong>增大</strong></td><td>可能减小</td><td>可调节</td></tr>
+  <tr><td>对 PM 影响</td><td><strong>显著提升</strong></td><td>基本不影响</td><td>可大幅提升</td></tr>
+  <tr><td>对稳态误差</td><td>无直接改善</td><td><strong>显著改善</strong></td><td>显著改善</td></tr>
+  <tr><td>缺点</td><td>放大高频噪声</td><td>降低响应速度</td><td>设计复杂</td></tr>
+  <tr><td>适用场景</td><td>PM 不足，希望提速</td><td>稳态精度不足</td><td>综合性能要求高</td></tr>
+</table>
+
+<hr>
+
+<!-- ==================== SUMMARY ==================== -->
+<h2 id="summary">本章小结</h2>
+
+<h3>知识框架回顾</h3>
+
+<pre><code>频域分析体系
+├── 工具层
+│   ├── Nyquist 图 → 稳定性判断（奈奎斯特判据）
+│   ├── Bode 图 → 系统分析与校正设计（渐近线法）
+│   └── Nichols 图 → 闭环特性分析
+├── 分析层
+│   ├── 稳定裕度（PM, GM）
+│   ├── 三频段分析（低频精度/中频动态/高频抗噪）
+│   └── 闭环频域指标（M_r, ω_b）
+└── 设计层（最终目标）
+    ├── 超前校正 → 提高 PM 和带宽
+    ├── 滞后校正 → 提高稳态精度
+    ├── 滞后-超前校正 → 综合改善
+    └── PID 校正 → 工业标准方案</code></pre>
+
+<h3>核心公式速查</h3>
+
+<table>
+  <tr><th>公式</th><th>含义</th></tr>
+  <tr><td>\(G(j\omega) = G(s)\vert_{s=j\omega}\)</td><td>频率特性定义</td></tr>
+  <tr><td>\(L(\omega) = 20\lg\vert G(j\omega) \vert\)</td><td>对数幅频特性（dB）</td></tr>
+  <tr><td>\(Z = N + P\)</td><td>奈奎斯特稳定判据</td></tr>
+  <tr><td>\(\gamma = 180° + \varphi(\omega_c)\)</td><td>相位裕度</td></tr>
+  <tr><td>\(K_g = -20\lg\vert G(j\omega_g) \vert\)</td><td>幅值裕度（dB）</td></tr>
+  <tr><td>\(\phi_m = \arcsin\frac{\alpha-1}{\alpha+1}\)</td><td>超前校正最大相角</td></tr>
+  <tr><td>\(M_r \approx 1/\sin\gamma\)</td><td>谐振峰与相位裕度关系</td></tr>
+</table>
+
+<h3>工程经验值</h3>
+
+<div class="summary-grid">
+  <div class="sg-item">
+    <strong>PM（相位裕度）</strong>
+    <p>推荐 <strong>40° ~ 60°</strong></p>
+  </div>
+  <div class="sg-item">
+    <strong>GM（幅值裕度）</strong>
+    <p>推荐 <strong>10 ~ 20 dB</strong></p>
+  </div>
+  <div class="sg-item">
+    <strong>中频段穿越</strong>
+    <p>以 <strong>−20 dB/dec</strong> 过 0 dB 线</p>
+  </div>
+  <div class="sg-item">
+    <strong>超前校正补偿</strong>
+    <p>余量 <strong>5° ~ 12°</strong></p>
+  </div>
+  <div class="sg-item">
+    <strong>带宽 ≈ 穿越频率</strong>
+    <p>\(\omega_b \approx \omega_c\)</p>
+  </div>
+  <div class="sg-item">
+    <strong>滞后校正转折</strong>
+    <p>\(1/T \ll \omega_c\)（一般 \(\omega_c/10\)）</p>
+  </div>
+</div>
+
+<h3>Python 绘图代码示例</h3>
+
+<p>本章所有图表均由 Python 脚本生成：</p>
+<pre><code># 文件位置: generate_all_figures.py
+# 运行方式: python generate_all_figures.py
+# 输出路径: ./figures/</code></pre>
+
+<p>核心绘图片段——惯性环节 Bode 图：</p>
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+w = np.logspace(-2, 3, 1000)
+T = 1.0
+mag_db = 20 * np.log10(1 / np.sqrt(1 + (w*T)**2))
+phase_deg = -np.degrees(np.arctan(w*T))
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+ax1.semilogx(w, mag_db)
+ax1.axvline(x=1/T, color='red', linestyle=':', alpha=0.5)
+ax1.set_ylabel('Magnitude / dB')
+ax1.grid(True, alpha=0.3, which='both')
+ax2.semilogx(w, phase_deg)
+ax2.axvline(x=1/T, color='red', linestyle=':', alpha=0.5)
+ax2.set_xlabel('Frequency (rad/s)')
+ax2.set_ylabel('Phase / deg')
+ax2.grid(True, alpha=0.3, which='both')
+plt.tight_layout()
+plt.show()</code></pre>
+
+<blockquote>
+  <p><strong>本章结语</strong>：频域分析是控制工程师最重要的思维工具箱之一。掌握 Nyquist 图（理解稳定性本质）和 Bode 图（会快速分析设计），你就具备了分析和设计控制系统的最核心能力。学好这一章，校正设计、鲁棒控制等高级内容就有了坚实的基础。</p>
+</blockquote>
+
+<div class="footer">
+  <p>本章图表由 Python (matplotlib + numpy + scipy) 自动生成，代码见 <code>generate_all_figures.py</code></p>
+  <p>参考文献：卢京潮. 自动控制原理. 2009.</p>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Back to top button -->
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+  // Back to top button visibility
+  const btn = document.getElementById('backTop');
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Active sidebar link tracking
+  const sections = document.querySelectorAll('h2[id], h3[id]');
+  const links = document.querySelectorAll('.sidebar a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
+    });
+    links.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+
+</body>
+</html>

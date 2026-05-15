@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自动控制原理 - 一个例子贯穿始终</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-light: #e8f0fe;
+    --primary-dark: #0f3b8e;
+    --accent: #f59e0b;
+    --accent-light: #fef3c7;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 16px;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%);
+    color: #fff;
+    padding: 60px 24px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg);
+    clip-path: ellipse(60% 100% at 50% 100%);
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; }
+  .hero p { font-size: 1.1rem; opacity: 0.85; margin-top: 12px; max-width: 700px; margin-inline: auto; }
+
+  /* Layout */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+  /* Section cards */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin: 28px auto;
+    padding: 32px 36px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+  }
+  .section:hover { transform: translateY(-1px); }
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .section h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 20px 0 10px;
+  }
+  .section p { margin: 10px 0; color: #334155; }
+
+  /* Example highlight box */
+  .example-box {
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+    border-left: 4px solid var(--primary);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .example-box .label {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .example-box p { margin: 4px 0; }
+
+  /* Analogy box */
+  .analogy {
+    background: linear-gradient(135deg, var(--accent-light), #fff7e6);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+  }
+  .analogy .label {
+    font-weight: 700;
+    color: #b45309;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+  }
+
+  /* Key point callout */
+  .key-point {
+    background: #f0fdf4;
+    border-left: 4px solid var(--success);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin: 14px 0;
+  }
+  .key-point .label { font-weight: 700; color: #059669; font-size: 0.85rem; letter-spacing: 1px; }
+
+  .warning-box {
+    background: #fef2f2;
+    border-left: 4px solid var(--danger);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin: 14px 0;
+  }
+  .warning-box .label { font-weight: 700; color: #dc2626; font-size: 0.85rem; letter-spacing: 1px; }
+
+  /* Math display */
+  .math-wrap { overflow-x: auto; padding: 6px 0; text-align: center; margin: 12px 0; }
+
+  /* Formula box */
+  .formula-box {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  /* SVG / Diagram */
+  .diagram-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { max-width: 100%; height: auto; }
+
+  /* Highlight */
+  .hl { color: var(--primary); font-weight: 600; }
+  .hl-r { color: var(--danger); font-weight: 600; }
+  .hl-g { color: var(--success); font-weight: 600; }
+  .hl-a { color: #b45309; font-weight: 600; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag-blue { background: #dbeafe; color: #1d4ed8; }
+  .tag-green { background: #d1fae5; color: #059669; }
+  .tag-red { background: #fee2e2; color: #dc2626; }
+  .tag-yellow { background: #fef3c7; color: #b45309; }
+
+  /* Summary table */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+  .summary-table th, .summary-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .summary-table th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+  .summary-table tr:nth-child(even) { background: #f8fafc; }
+
+  /* PID table */
+  .pid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .pid-card {
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    color: #fff;
+  }
+  .pid-card.p { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  .pid-card.i { background: linear-gradient(135deg, #10b981, #059669); }
+  .pid-card.d { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .pid-card h4 { font-size: 1.5rem; margin-bottom: 4px; }
+  .pid-card p { font-size: 0.85rem; opacity: 0.9; color: #fff; margin: 2px 0; }
+
+  /* Flow timeline */
+  .flow {
+    position: relative;
+    padding-left: 28px;
+    margin: 16px 0;
+  }
+  .flow::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--primary), var(--accent), var(--success));
+    border-radius: 3px;
+  }
+  .flow-item {
+    position: relative;
+    padding: 10px 0 10px 16px;
+  }
+  .flow-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 16px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px var(--primary);
+  }
+  .flow-item:nth-child(2)::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+  .flow-item:nth-child(3)::before { background: var(--success); box-shadow: 0 0 0 3px var(--success); }
+  .flow-item:nth-child(4)::before { background: #8b5cf6; box-shadow: 0 0 0 3px #8b5cf6; }
+  .flow-item:nth-child(5)::before { background: #ec4899; box-shadow: 0 0 0 3px #ec4899; }
+  .flow-item:nth-child(6)::before { background: #f59e0b; box-shadow: 0 0 0 3px #f59e0b; }
+  .flow-item strong { color: var(--primary-dark); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .section { padding: 22px 18px; margin: 16px auto; }
+    .hero h1 { font-size: 1.5rem; }
+    .pid-grid { grid-template-columns: 1fr; }
+    .container { padding: 0 12px; }
+  }
+
+  /* Interactives */
+  .interactive-area {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 14px 0;
+    text-align: center;
+  }
+  .param-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin: 10px 0;
+  }
+  .param-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .param-item input[type="range"] { width: 120px; }
+
+  .plot-canvas {
+    width: 100%;
+    max-width: 600px;
+    height: 240px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  /* Root locus canvas */
+  .rl-canvas {
+    width: 100%;
+    max-width: 400px;
+    height: 320px;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+  }
+  .footer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>⚙️ 自动控制原理 · 一例通</h1>
+  <p>用一个「直流电机转速控制」的真实例子，串起自动控制原理的所有核心知识点<br>从建模到分析，再到设计控制器，一条线讲清楚</p>
+</div>
+
+<div class="container">
+
+<!-- ==================== 0. INTRO ==================== -->
+<div class="section">
+  <h2><span class="num">0</span> 引子：什么是自动控制？</h2>
+  <p>你设定一个<strong>目标</strong>，系统自动<strong>测量</strong>当前状态，<strong>比较</strong>差距，然后<strong>调整</strong>——这就是控制的本质。</p>
+
+  <div class="analogy">
+    <div class="label">🚗 日常类比 · 开车</div>
+    <p>你想保持 100 km/h 的速度（<strong>目标值</strong>），眼睛看仪表盘（<strong>测量</strong>），发现速度慢了就踩油门（<strong>控制</strong>），快了就松一点（<strong>反馈</strong>）。整个过程你就是一个<strong>控制器</strong>。</p>
+  </div>
+
+  <div class="example-box">
+    <div class="label">📌 贯穿全文的例子</div>
+    <p><strong>直流电机转速控制系统</strong>：你希望电风扇的转速稳定在 1000 RPM。给电机施加电压，它就会转。但负载变化（比如风叶阻力）、电压波动都会影响转速——我们需要一个<strong>自动控制系统</strong>来让转速稳稳地保持在目标值。</p>
+  </div>
+</div>
+
+<!-- ==================== 1. BASIC CONCEPTS ==================== -->
+<div class="section">
+  <h2><span class="num">1</span> 基本概念 — 开环 vs 闭环</h2>
+
+  <h3>开环控制</h3>
+  <p>给电机一个固定电压，它就转。但你<strong>不知道</strong>实际转速是多少，负载一变转速就掉。</p>
+  <div class="diagram-wrap">
+    <svg width="520" height="70" viewBox="0 0 520 70">
+      <rect x="10" y="20" width="80" height="30" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="50" y="39" text-anchor="middle" font-size="12" fill="#1e40af">目标转速</text>
+      <line x1="90" y1="35" x2="130" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="130" y="20" width="80" height="30" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="170" y="39" text-anchor="middle" font-size="12" fill="#92400e">控制器</text>
+      <line x1="210" y1="35" x2="250" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="250" y="20" width="80" height="30" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="290" y="39" text-anchor="middle" font-size="12" fill="#065f46">电机</text>
+      <line x1="330" y1="35" x2="380" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="380" y="15" width="80" height="40" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="420" y="30" text-anchor="middle" font-size="12" fill="#9d174d">实际转速</text>
+      <text x="420" y="46" text-anchor="middle" font-size="11" fill="#9d174d">(未知)</text>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#64748b"/></marker></defs>
+    </svg>
+  </div>
+  <p><span class="tag tag-red">缺点</span> 没有反馈，不知道实际结果。风吹一下风扇，转速变慢了你也不知道。</p>
+
+  <h3>闭环控制（反馈控制）</h3>
+  <p>加一个<strong>编码器</strong>（速度传感器）测量实际转速，与目标比较，有误差就调整电压。</p>
+  <div class="diagram-wrap">
+    <svg width="520" height="108" viewBox="0 0 520 108">
+      <!-- Comparator -->
+      <circle cx="55" cy="40" r="18" fill="#e8f0fe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="55" y="37" text-anchor="middle" font-size="13" fill="#1e40af">+</text>
+      <text x="55" y="52" text-anchor="middle" font-size="13" fill="#1e40af">−</text>
+      <!-- r input -->
+      <line x1="5" y1="40" x2="37" y2="40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="20" y="30" text-anchor="middle" font-size="11" fill="#64748b">r(t)</text>
+      <!-- error output -->
+      <line x1="73" y1="40" x2="110" y2="40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="92" y="30" text-anchor="middle" font-size="11" fill="#64748b">e(t)</text>
+      <!-- Controller -->
+      <rect x="110" y="25" width="70" height="30" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="145" y="44" text-anchor="middle" font-size="12" fill="#92400e">控制器</text>
+      <line x1="180" y1="40" x2="220" y2="40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Plant -->
+      <rect x="220" y="25" width="70" height="30" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="255" y="44" text-anchor="middle" font-size="12" fill="#065f46">电机</text>
+      <line x1="290" y1="40" x2="340" y2="40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Output -->
+      <text x="365" y="34" text-anchor="middle" font-size="11" fill="#64748b">c(t)</text>
+      <text x="365" y="50" text-anchor="middle" font-size="11" fill="#64748b">(实际转速)</text>
+      <!-- Feedback line -->
+      <line x1="340" y1="40" x2="370" y2="40" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="370" y1="40" x2="370" y2="90" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="55" y1="90" x2="370" y2="90" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="55" y1="58" x2="55" y2="90" stroke="#64748b" stroke-width="1.5"/>
+      <!-- Sensor -->
+      <rect x="100" y="75" width="70" height="26" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="135" y="92" text-anchor="middle" font-size="11" fill="#9d174d">传感器</text>
+      <!-- connector from plant to sensor -->
+      <line x1="290" y1="55" x2="290" y2="88" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="290" y1="88" x2="170" y2="88" stroke="#64748b" stroke-width="1" stroke-dasharray="4,2"/>
+      <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#64748b"/></marker></defs>
+    </svg>
+  </div>
+  <p><span class="tag tag-green">优点</span> 有反馈，能自动修正误差。负载变了，转速下降，控制器会自动加大电压补回来。</p>
+
+  <div class="key-point">
+    <div class="label">💡 核心思想</div>
+    <p><strong>反馈</strong>是自动控制的灵魂。测量 → 比较 → 修正，这就是闭环控制的基本逻辑。</p>
+  </div>
+</div>
+
+<!-- ==================== 2. MODELING ==================== -->
+<div class="section">
+  <h2><span class="num">2</span> 数学模型 — 用方程描述系统</h2>
+  <p>要控制电机，首先得知道它"长什么样"——用数学语言描述输入（电压）和输出（转速）之间的关系。</p>
+
+  <h3>2.1 微分方程</h3>
+  <p>直流电机有两个基本方程：</p>
+  <div class="formula-box">
+    <strong>电气方程：</strong> \( u(t) = L\frac{di}{dt} + Ri(t) + e(t) \)<br><br>
+    <strong>机械方程：</strong> \( J\frac{d\omega}{dt} + b\omega(t) = T(t) = K_t i(t) \)
+  </div>
+  <p>其中 \(L\) 是电感，\(R\) 是电阻，\(J\) 是转动惯量，\(b\) 是阻尼系数，\(K_t\) 是转矩常数。</p>
+  <p>假设电感 \(L\) 很小忽略不计，整理后得到：</p>
+  <div class="formula-box">
+    \( \tau \frac{d\omega}{dt} + \omega(t) = K u(t) \)
+  </div>
+  <p>这就是一个<strong>一阶系统</strong>——像给水桶注水，水位慢慢上升。</p>
+
+  <div class="analogy">
+    <div class="label">🚗 类比</div>
+    <p>电机模型就像汽车的加速特性：踩油门（电压输入），车速（转速）不会瞬间达到目标，而是像"给浴缸放水"一样慢慢上升——这就是<strong>惯性</strong>。\( \tau \) 就是时间常数，决定上升的快慢。</p>
+  </div>
+
+  <h3>2.2 传递函数</h3>
+  <p>对微分方程两边做<strong>拉普拉斯变换</strong>（把时间域 \(t\) 变到复数域 \(s\)），假设初始状态为0：</p>
+  <div class="formula-box">
+    \( G(s) = \frac{\Omega(s)}{U(s)} = \frac{K}{\tau s + 1} \)
+  </div>
+  <p>这个 \(G(s)\) 就是<strong>传递函数</strong>，它像一个"黑箱说明书"——输入一个信号，输出就是输入乘以 \(G(s)\)。</p>
+
+  <div class="key-point">
+    <div class="label">💡 为什么用传递函数？</div>
+    <p>微分方程难算，但传递函数把微分变成了乘法（\(s\) 代替 \(\frac{d}{dt}\)），把复杂的微分方程变成了简单的代数运算。这就是拉普拉斯变换的魔力！</p>
+  </div>
+
+  <p>对于我们这个例子，假设参数为 \(K=10, \tau=1\)，则：</p>
+  <div class="formula-box">
+    \( G(s) = \frac{10}{s + 1} \)
+  </div>
+
+  <p>更完整的电机模型（考虑电气时间常数后）是<strong>二阶系统</strong>：</p>
+  <div class="formula-box">
+    \( G(s) = \frac{K \omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2} \)
+  </div>
+  <p>其中 \(\zeta\) 是<strong>阻尼比</strong>，\(\omega_n\) 是<strong>自然频率</strong>。这两个参数决定了系统的"性格"。</p>
+</div>
+
+<!-- ==================== 3. TIME DOMAIN ==================== -->
+<div class="section">
+  <h2><span class="num">3</span> 时域分析 — 系统表现怎么样？</h2>
+  <p>给系统一个<strong>阶跃信号</strong>（突然给一个目标转速，从0到1000 RPM），看它怎么响应。</p>
+
+  <h3>3.1 一阶系统响应</h3>
+  <p>一阶系统 \( G(s) = \frac{10}{s+1} \) 的阶跃响应：</p>
+  <div class="formula-box">
+    \( c(t) = 10(1 - e^{-t}) \)
+  </div>
+
+  <div class="diagram-wrap">
+    <svg width="500" height="200" viewBox="0 0 500 200">
+      <!-- Axes -->
+      <line x1="40" y1="180" x2="460" y2="180" stroke="#333" stroke-width="1.5"/>
+      <line x1="40" y1="180" x2="40" y2="20" stroke="#333" stroke-width="1.5"/>
+      <text x="250" y="195" text-anchor="middle" font-size="12">时间 t</text>
+      <text x="20" y="100" text-anchor="middle" font-size="12" transform="rotate(-90,20,100)">转速</text>
+      <!-- Target -->
+      <line x1="40" y1="40" x2="460" y2="40" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="465" y="44" font-size="11" fill="#64748b">目标</text>
+      <!-- Step response curve -->
+      <path d="M40,180 L80,180 Q120,180 160,140 Q200,100 240,74 Q280,56 320,46 Q360,42 400,40 L460,40"
+            fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+      <!-- 63.2% line -->
+      <line x1="40" y1="92" x2="140" y2="92" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="142" y="96" font-size="10" fill="#b45309">63.2%</text>
+      <!-- tau arrow -->
+      <line x1="140" y1="180" x2="140" y2="92" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="140" y="190" text-anchor="middle" font-size="11" fill="#dc2626">τ=1</text>
+      <!-- steady state -->
+      <text x="350" y="30" text-anchor="middle" font-size="11" fill="#059669">稳态值 = 10</text>
+    </svg>
+  </div>
+
+  <p><span class="tag tag-blue">关键指标</span></p>
+  <ul style="margin-left:20px; color:#334155;">
+    <li><strong>时间常数 \(\tau\)</strong>：响应上升到稳态值的 63.2% 所需的时间（τ 越小，响应越快）</li>
+    <li><strong>调节时间 \(t_s\)</strong>：进入 ±2% 误差带所需时间，约 \(4\tau\)</li>
+    <li><strong>稳态值</strong>：最终稳定在目标值附近</li>
+  </ul>
+
+  <h3>3.2 二阶系统响应</h3>
+  <p>当系统是二阶时（更接近真实电机），响应更丰富：</p>
+
+  <div class="diagram-wrap">
+    <svg width="500" height="240" viewBox="0 0 500 240">
+      <line x1="40" y1="220" x2="460" y2="220" stroke="#333" stroke-width="1.5"/>
+      <line x1="40" y1="220" x2="40" y2="20" stroke="#333" stroke-width="1.5"/>
+      <text x="250" y="235" text-anchor="middle" font-size="12">时间 t</text>
+      <text x="20" y="120" text-anchor="middle" font-size="12" transform="rotate(-90,20,120)">转速</text>
+      <!-- Target -->
+      <line x1="40" y1="50" x2="460" y2="50" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="465" y="54" font-size="11" fill="#64748b">目标</text>
+      <!-- ζ=0.2 underdamped -->
+      <path d="M40,220 L80,220 Q120,160 150,80 Q160,50 155,60 Q170,30 165,50 Q180,25 190,40 Q210,45 240,48 Q280,50 460,50"
+            fill="none" stroke="#ef4444" stroke-width="2"/>
+      <text x="460" y="32" text-anchor="end" font-size="11" fill="#dc2626">ζ=0.2（欠阻尼）</text>
+      <!-- ζ=0.7 -->
+      <path d="M40,220 L100,200 Q140,160 170,100 Q190,65 200,55 Q215,50 240,50 L460,50"
+            fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <text x="460" y="67" text-anchor="end" font-size="11" fill="#b45309">ζ=0.7（最佳阻尼）</text>
+      <!-- ζ=1 critical -->
+      <path d="M40,220 L120,190 Q180,130 230,80 Q260,58 280,52 Q300,50 340,50 L460,50"
+            fill="none" stroke="#10b981" stroke-width="2"/>
+      <text x="460" y="102" text-anchor="end" font-size="11" fill="#059669">ζ=1（临界阻尼）</text>
+      <!-- ζ=2 overdamped -->
+      <path d="M40,220 L140,210 Q240,170 310,115 Q360,78 390,60 Q420,52 460,50"
+            fill="none" stroke="#3b82f6" stroke-width="2"/>
+      <text x="460" y="142" text-anchor="end" font-size="11" fill="#1d4ed8">ζ=2（过阻尼）</text>
+      <!-- Overshoot label -->
+      <line x1="150" y1="50" x2="150" y2="80" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="135" y="72" text-anchor="end" font-size="10" fill="#dc2626">超调量</text>
+    </svg>
+  </div>
+
+  <p><span class="tag tag-blue">二阶系统关键指标</span></p>
+  <div class="summary-table" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>阻尼比 \(\zeta\)</strong>
+      <p style="font-size:0.9rem; margin:4px 0 0;">
+        \(\zeta &lt; 1\) 欠阻尼（有超调）<br>
+        \(\zeta = 1\) 临界阻尼（刚好不超调）<br>
+        \(\zeta &gt; 1\) 过阻尼（响应慢）
+      </p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>性能指标</strong>
+      <p style="font-size:0.9rem; margin:4px 0 0;">
+        超调量 \(M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}}\)<br>
+        峰值时间 \(t_p = \frac{\pi}{\omega_n\sqrt{1-\zeta^2}}\)<br>
+        调节时间 \(t_s \approx \frac{4}{\zeta\omega_n}\)
+      </p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>稳态误差 \(e_{ss}\)</strong>
+      <p style="font-size:0.9rem; margin:4px 0 0;">
+        系统最终"稳定"在离目标多远的地方<br>
+        与系统<strong>类型</strong>（型别）有关
+      </p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>上升时间 \(t_r\)</strong>
+      <p style="font-size:0.9rem; margin:4px 0 0;">
+        从 10% 上升到 90% 所需的时间<br>
+        衡量系统<strong>快慢</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="example-box">
+    <div class="label">📌 回到电机例子</div>
+    <p>我们设计的电机转速控制系统希望：<strong>超调小</strong>（别转太快冲过头又降回来），<strong>调节快</strong>（尽快稳定），<strong>稳态误差为0</strong>（最终精准达到目标转速）。理想阻尼比通常取 \(\zeta \approx 0.7\) —— 响应快且超调适中。</p>
+  </div>
+</div>
+
+<!-- ==================== 4. STABILITY ==================== -->
+<div class="section">
+  <h2><span class="num">4</span> 稳定性 — 系统会失控吗？</h2>
+  <p>稳定性是控制系统的<strong>底线</strong>。不稳定的系统就像骑一辆没有阻尼的自行车——稍微一点扰动就会剧烈振荡甚至翻车。</p>
+
+  <div class="analogy">
+    <div class="label">🚗 类比</div>
+    <p><strong>稳定</strong> = 你推一下 pendulum（摆锤），它最终会回到原来的位置。<br>
+    <strong>不稳定</strong> = 你推一下，它越摆越大，甚至翻过去。<br>
+    <strong>临界稳定</strong> = 它持续等幅振荡，既不停止也不发散。</p>
+  </div>
+
+  <h3>稳定性判据：看极点</h3>
+  <p>系统的<strong>极点</strong>（传递函数分母=0的根）决定了稳定性：</p>
+
+  <div class="diagram-wrap">
+    <svg width="500" height="160" viewBox="0 0 500 160">
+      <!-- Stable -->
+      <rect x="30" y="10" width="180" height="120" rx="8" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+      <text x="120" y="30" text-anchor="middle" font-size="13" font-weight="bold" fill="#059669">✅ 稳定</text>
+      <!-- s-plane -->
+      <line x1="60" y1="110" x2="190" y2="110" stroke="#333" stroke-width="1"/>
+      <line x1="120" y1="70" x2="120" y2="115" stroke="#333" stroke-width="1" marker-end="url(#arrowUp)"/>
+      <text x="120" y="62" text-anchor="middle" font-size="10">Im</text>
+      <text x="198" y="114" font-size="10">Re</text>
+      <!-- pole -->
+      <circle cx="75" cy="95" r="5" fill="#ef4444"/>
+      <text x="70" y="88" text-anchor="end" font-size="10" fill="#dc2626">×</text>
+      <text x="55" y="78" text-anchor="middle" font-size="9" fill="#059669">左半平面</text>
+      <!-- line -->
+      <line x1="215" y1="70" x2="240" y2="70" stroke="#64748b" stroke-width="1.5"/>
+      <!-- Unstable -->
+      <rect x="250" y="10" width="220" height="120" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="360" y="30" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">❌ 不稳定</text>
+      <line x1="280" y1="110" x2="420" y2="110" stroke="#333" stroke-width="1"/>
+      <line x1="350" y1="70" x2="350" y2="115" stroke="#333" stroke-width="1"/>
+      <text x="350" y="62" text-anchor="middle" font-size="10">Im</text>
+      <text x="428" y="114" font-size="10">Re</text>
+      <!-- stable pole left -->
+      <circle cx="305" cy="95" r="5" fill="#10b981"/>
+      <text x="300" y="88" text-anchor="end" font-size="10" fill="#059669">×</text>
+      <!-- unstable pole right -->
+      <circle cx="395" cy="95" r="5" fill="#ef4444"/>
+      <text x="400" y="88" font-size="10" fill="#dc2626">×</text>
+      <text x="410" y="80" text-anchor="start" font-size="9" fill="#dc2626">右半平面</text>
+      <defs><marker id="arrowUp" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,10 L5,0 L10,10" fill="#333"/></marker></defs>
+    </svg>
+  </div>
+
+  <p><strong>核心规则</strong>：所有闭环极点都在 \(s\) 平面<strong>左半平面</strong>（实部 < 0）→ 系统稳定。<br>只要有任何一个极点在右半平面 → 系统不稳定。</p>
+
+  <h3>Routh-Hurwitz 稳定判据</h3>
+  <p>不用真的求解出极点，只通过特征方程的系数就可以判断稳定性。</p>
+
+  <div class="example-box">
+    <div class="label">📌 电机例子</div>
+    <p>假设系统的特征方程为：</p>
+    <div class="formula-box">\( s^3 + 3s^2 + 3s + 1 + K = 0 \)</div>
+    <p>列Routh表：</p>
+    <div class="formula-box" style="font-size:0.95rem;">
+      \(
+      \begin{array}{c|cc}
+      s^3 &amp; 1 &amp; 3 \\
+      s^2 &amp; 3 &amp; 1+K \\
+      s^1 &amp; \frac{9 - (1+K)}{3} = \frac{8-K}{3} &amp; 0 \\
+      s^0 &amp; 1+K &amp;
+      \end{array}
+      \)
+    </div>
+    <p>要使系统稳定，第一列必须全部同号 &gt; 0：</p>
+    <p>\( 3 > 0 \) ✓ &nbsp;&nbsp; \( \frac{8-K}{3} > 0 \) ⇒ \( K < 8 \) &nbsp;&nbsp; \( 1+K > 0 \) ⇒ \( K > -1 \)</p>
+    <p><strong>结论：当增益 \(0 < K < 8\) 时系统稳定。K=8 时临界稳定（等幅振荡）。</strong></p>
+  </div>
+
+  <div class="key-point">
+    <div class="label">💡 为什么要关注稳定性？</div>
+    <p>反馈控制是一把双刃剑：反馈能提高精度，但<strong>增益太高</strong>反而会让系统失稳。设计控制器时要<strong>兼顾稳定性和性能</strong>——增益低了响应慢，高了会振荡。</p>
+  </div>
+</div>
+
+<!-- ==================== 5. ROOT LOCUS ==================== -->
+<div class="section">
+  <h2><span class="num">5</span> 根轨迹法 — 极点"走"给你看</h2>
+  <p>根轨迹展示了<strong>当增益 \(K\) 从 0 变化到无穷大时</strong>，闭环极点在 \(s\) 平面上走过的"路径"。</p>
+
+  <div class="analogy">
+    <div class="label">🚗 类比</div>
+    <p>想象你慢慢拧大音量旋钮（增大增益），一开始声音正常（稳定），拧到某个位置开始啸叫（失稳）。根轨迹就是画出这个"从稳定到不稳定"的临界点在哪儿。</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg width="480" height="340" viewBox="0 0 480 340">
+      <!-- Title -->
+      <text x="240" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">根轨迹图（Root Locus）</text>
+      <!-- Axes -->
+      <line x1="60" y1="300" x2="420" y2="300" stroke="#333" stroke-width="1.5"/>
+      <line x1="240" y1="290" x2="240" y2="40" stroke="#333" stroke-width="1.5"/>
+      <text x="425" y="304" font-size="12" fill="#333">Re</text>
+      <text x="245" y="36" font-size="12" fill="#333">Im</text>
+      <!-- Grid lines -->
+      <line x1="60" y1="220" x2="420" y2="220" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <line x1="60" y1="140" x2="420" y2="140" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <line x1="140" y1="300" x2="140" y2="40" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <line x1="340" y1="300" x2="340" y2="40" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <!-- Zero at -1 -->
+      <circle cx="180" cy="300" r="6" fill="none" stroke="#10b981" stroke-width="2"/>
+      <text x="180" y="324" text-anchor="middle" font-size="10" fill="#059669">零点 -1</text>
+      <!-- Poles: open loop at 0 and -2 -->
+      <text x="100" y="312" text-anchor="middle" font-size="11" fill="#dc2626">×</text>
+      <text x="100" y="330" text-anchor="middle" font-size="10" fill="#dc2626">极点 0</text>
+      <text x="300" y="312" text-anchor="middle" font-size="11" fill="#dc2626">×</text>
+      <text x="300" y="330" text-anchor="middle" font-size="10" fill="#dc2626">极点 -2</text>
+
+      <!-- Root locus branches -->
+      <!-- Branch going left from pole at 0 -->
+      <path d="M180,300 Q140,300 130,295 Q120,290 115,280 Q108,265 105,250 Q100,230 95,210 Q90,185 85,160 Q80,135 75,110 Q70,85 65,60"
+            fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+      <!-- upper branch from -2 -->
+      <path d="M300,300 Q340,300 350,290 Q360,280 365,265 Q370,250 375,235 Q380,215 385,195 Q390,175 400,155 Q410,135 420,115"
+            fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+
+      <!-- Arrow markers -->
+      <polygon points="65,60 72,68 75,58" fill="#3b82f6"/>
+      <polygon points="420,115 412,120 419,124" fill="#3b82f6"/>
+
+      <!-- K labels -->
+      <text x="140" y="280" font-size="10" fill="#1d4ed8">K↑</text>
+      <text x="350" y="280" font-size="10" fill="#1d4ed8">K↑</text>
+
+      <!-- Stable region label -->
+      <text x="120" y="60" text-anchor="middle" font-size="10" fill="#059669">← 稳定区</text>
+      <!-- Unstable region label -->
+      <!-- Boundary line at 0 -->
+      <line x1="240" y1="40" x2="240" y2="300" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="330" y="70" text-anchor="middle" font-size="10" fill="#dc2626">不稳定区 →</text>
+
+      <!-- Critical K point -->
+      <circle cx="240" cy="300" r="5" fill="#f59e0b"/>
+      <text x="240" y="342" text-anchor="middle" font-size="10" fill="#b45309">临界点 K=8</text>
+    </svg>
+  </div>
+
+  <p><span class="tag tag-blue">从根轨迹能看出什么？</span></p>
+  <ul style="margin-left:20px; color:#334155;">
+    <li><strong>稳定范围</strong>：根轨迹穿过虚轴时的 \(K\) 值就是临界增益（本例 \(K=8\)）</li>
+    <li><strong>系统类型</strong>：根轨迹的分支数 = 极点数，走向反映系统阶次</li>
+    <li><strong>设计指导</strong>：选择 \(K\) 使极点落在理想位置（阻尼比 0.7 线附近）</li>
+  </ul>
+
+  <div class="key-point">
+    <div class="label">💡 根轨迹的美妙之处</div>
+    <p>不用反复尝试不同的 \(K\) 值，一张根轨迹图就把所有可能性都展示出来了！它是控制工程师选择增益的"导航地图"。</p>
+  </div>
+</div>
+
+<!-- ==================== 6. FREQUENCY DOMAIN ==================== -->
+<div class="section">
+  <h2><span class="num">6</span> 频域分析 — 给系统"扫频"</h2>
+  <p>时域分析看"阶跃响应"，频域分析看"不同频率的正弦波输入下，系统的输出是什么样的"——就像给音响系统放不同频率的声音，看哪个频段会被放大或衰减。</p>
+
+  <div class="analogy">
+    <div class="label">🚗 类比</div>
+    <p>想象你在推一个秋千：<br>
+    <strong>低频</strong>（慢慢推）→ 秋千跟着你走，振幅正常。<br>
+    <strong>共振频率</strong>（刚好跟秋千自然频率一致）→ 越推越高，振幅变得非常大。<br>
+    <strong>高频</strong>（快速乱推）→ 秋千根本来不及反应，几乎不动。</p>
+    <p>这就是"频率响应"的直觉——系统对不同频率的输入反应不同。</p>
+  </div>
+
+  <h3>Bode 图</h3>
+  <p>Bode 图包含两个图：<strong>幅频特性</strong>（增益 vs 频率）和<strong>相频特性</strong>（相位 vs 频率）。</p>
+
+  <div class="diagram-wrap">
+    <svg width="520" height="340" viewBox="0 0 520 340">
+      <text x="260" y="20" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">Bode 图示例</text>
+
+      <!-- Magnitude plot -->
+      <text x="260" y="42" text-anchor="middle" font-size="12" fill="#64748b">幅频特性</text>
+      <line x1="60" y1="105" x2="460" y2="105" stroke="#333" stroke-width="1"/>
+      <line x1="60" y1="55" x2="60" y2="115" stroke="#333" stroke-width="1"/>
+      <text x="55" y="80" text-anchor="end" font-size="10">dB</text>
+      <text x="460" y="118" text-anchor="end" font-size="10">ω (log)</text>
+
+      <!-- Low freq flat -->
+      <path d="M60,55 L200,55 Q280,55 320,65 Q360,75 400,90 Q430,98 460,105"
+            fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+      <!-- -3dB line -->
+      <line x1="60" y1="70" x2="280" y2="70" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="285" y="73" font-size="9" fill="#dc2626">-3dB</text>
+      <!-- cutoff freq -->
+      <line x1="280" y1="55" x2="280" y2="105" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="280" y="120" text-anchor="middle" font-size="9" fill="#dc2626">ω_c</text>
+
+      <!-- Phase plot -->
+      <line x1="60" y1="190" x2="460" y2="190" stroke="#333" stroke-width="1"/>
+      <line x1="60" y1="140" x2="60" y2="200" stroke="#333" stroke-width="1"/>
+      <text x="52" y="168" text-anchor="end" font-size="10">相位</text>
+      <text x="460" y="203" text-anchor="end" font-size="10">ω (log)</text>
+
+      <!-- Phase curve starts at 0, goes to -180 -->
+      <path d="M60,140 L200,140 Q260,140 300,150 Q340,160 370,172 Q400,182 430,188 L460,190"
+            fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+
+      <!-- Phase margin annotation -->
+      <line x1="280" y1="55" x2="280" y2="165" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="290" y="160" font-size="10" fill="#059669">PM</text>
+      <path d="M280,165 Q290,158 300,158 Q310,158 315,162" fill="none" stroke="#10b981" stroke-width="1.5"/>
+
+      <!-- Margin labels -->
+      <text x="150" y="232" text-anchor="middle" font-size="11" fill="#1d4ed8">低频：增益大，能精确跟踪</text>
+      <text x="150" y="252" text-anchor="middle" font-size="11" fill="#1d4ed8">高频：增益小，抗噪声能力强</text>
+    </svg>
+  </div>
+
+  <p><span class="tag tag-blue">Bode 图的关键信息</span></p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0;">
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>幅值裕度 (Gain Margin)</strong>
+      <p style="font-size:0.85rem; margin:4px 0 0;">在相位 = -180° 时，增益离 0dB 还有多远。裕度越大越稳定。</p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>相位裕度 (Phase Margin)</strong>
+      <p style="font-size:0.85rem; margin:4px 0 0;">在增益 = 0dB 时，相位离 -180° 还有多远。一般要求 PM > 45°。</p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>截止频率 ω_c</strong>
+      <p style="font-size:0.85rem; margin:4px 0 0;">增益降到 -3dB 的频率，反映系统带宽（响应速度）。</p>
+    </div>
+    <div style="background:#f8fafc; border-radius:8px; padding:12px; border:1px solid var(--border);">
+      <strong>低频增益</strong>
+      <p style="font-size:0.85rem; margin:4px 0 0;">低频增益高 = 稳态精度好，能精确跟踪设定值。</p>
+    </div>
+  </div>
+
+  <h3>Nyquist 判据（稳定性）</h3>
+  <p>Nyquist 图是频域版的稳定性判据——用开环频率响应判断闭环稳定性。</p>
+  <div class="formula-box" style="font-size:0.95rem;">
+    Nyquist 判据：\( Z = N + P \)<br>
+    其中 \(Z\) = 闭环右半平面极点数，\(N\) = Nyquist 曲线绕 (-1, j0) 的圈数，\(P\) = 开环右半平面极点数。<br>
+    系统稳定 ⇔ \(Z = 0\)
+  </div>
+  <p>简单理解：Nyquist 曲线<strong>离 (-1, j0) 点越远</strong>，系统<strong>越稳定</strong>。</p>
+
+  <div class="key-point">
+    <div class="label">💡 频域分析的价值</div>
+    <p>频域方法（Bode 图、Nyquist 判据）是控制工程中<strong>最实用的工具之一</strong>。实际系统中，很多控制器的设计（如超前-滞后校正）都是基于频域方法完成的。而且实验上可以通过"扫频"直接测量系统的频率响应，<strong>不需要知道系统的数学模型</strong>！</p>
+  </div>
+</div>
+
+<!-- ==================== 7. CONTROLLER DESIGN ==================== -->
+<div class="section">
+  <h2><span class="num">7</span> 控制器设计 — 让系统变得更好</h2>
+  <p>分析完了，到了最激动人心的部分——<strong>设计控制器</strong>来改善系统性能！</p>
+
+  <div class="example-box">
+    <div class="label">📌 电机例子的现状诊断</div>
+    <p>我们的直流电机开环传递函数 \(G(s) = \frac{10}{s+1}\) 存在以下问题：</p>
+    <ul style="margin-left:18px;">
+      <li><span class="hl-r">稳态误差不为0</span> — 最终转速与目标有偏差</li>
+      <li><span class="hl-r">响应可能不够快</span> — 时间常数 τ=1 响应偏慢</li>
+      <li><span class="hl-r">抗干扰能力弱</span> — 负载变化时转速会波动</li>
+    </ul>
+  </div>
+
+  <h3>PID 控制 — 控制界的"瑞士军刀"</h3>
+  <p>PID（比例-积分-微分）控制器是工业界<strong>最广泛使用</strong>的控制算法，没有之一！</p>
+
+  <div class="formula-box">
+    \( u(t) = K_p e(t) + K_i \int e(t)dt + K_d \frac{de(t)}{dt} \)
+  </div>
+
+  <div class="pid-grid">
+    <div class="pid-card p">
+      <h4>P</h4>
+      <p><strong>比例</strong></p>
+      <p style="margin-top:6px;">有误差就放大</p>
+      <p style="font-size:0.75rem;">误差越大，控制越强</p>
+      <p style="font-size:0.75rem; margin-top:6px; opacity:0.7;">⚡ 加快响应<br>❌ 有稳态误差</p>
+    </div>
+    <div class="pid-card i">
+      <h4>I</h4>
+      <p><strong>积分</strong></p>
+      <p style="margin-top:6px;">累积误差来消除静差</p>
+      <p style="font-size:0.75rem;">误差一直存在就一直加</p>
+      <p style="font-size:0.75rem; margin-top:6px; opacity:0.7;">⚡ 消除稳态误差<br>❌ 可能引起振荡</p>
+    </div>
+    <div class="pid-card d">
+      <h4>D</h4>
+      <p><strong>微分</strong></p>
+      <p style="margin-top:6px;">看误差的变化趋势</p>
+      <p style="font-size:0.75rem;">提前预判，刹车防超调</p>
+      <p style="font-size:0.75rem; margin-top:6px; opacity:0.7;">⚡ 减小超调<br>❌ 对噪声敏感</p>
+    </div>
+  </div>
+
+  <div class="analogy">
+    <div class="label">🚗 开车类比</div>
+    <p><strong>P（比例）</strong> = 看到速度慢了，就踩油门——误差越大踩得越狠。<br>
+    <strong>I（积分）</strong> = 一直有微小误差（比如上坡），P 不够，积分项慢慢累积，最终把误差消掉。<br>
+    <strong>D（微分）</strong> = 看到速度<strong>即将</strong>超过目标，提前松油门——防超调。</p>
+  </div>
+
+  <h3>设计过程</h3>
+  <p>给电机加上 PID 控制器后，闭环系统变为：</p>
+
+  <div class="diagram-wrap">
+    <svg width="520" height="90" viewBox="0 0 520 90">
+      <circle cx="50" cy="35" r="18" fill="#e8f0fe" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="50" y="32" text-anchor="middle" font-size="12" fill="#1e40af">+</text>
+      <text x="50" y="47" text-anchor="middle" font-size="12" fill="#1e40af">−</text>
+      <line x1="5" y1="35" x2="32" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <text x="20" y="25" text-anchor="middle" font-size="10" fill="#64748b">r</text>
+      <line x1="68" y1="35" x2="105" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <rect x="105" y="20" width="80" height="30" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="145" y="39" text-anchor="middle" font-size="12" fill="#92400e">PID</text>
+      <line x1="185" y1="35" x2="225" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <rect x="225" y="20" width="80" height="30" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+      <text x="265" y="39" text-anchor="middle" font-size="12" fill="#065f46">电机</text>
+      <line x1="305" y1="35" x2="360" y2="35" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <text x="385" y="30" text-anchor="middle" font-size="11" fill="#64748b">c(t)</text>
+      <line x1="360" y1="35" x2="390" y2="35" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="390" y1="35" x2="390" y2="75" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="50" y1="75" x2="390" y2="75" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="50" y1="53" x2="50" y2="75" stroke="#64748b" stroke-width="1.5"/>
+      <rect x="100" y="62" width="70" height="24" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="135" y="78" text-anchor="middle" font-size="10" fill="#9d174d">传感器</text>
+      <line x1="305" y1="50" x2="305" y2="74" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="305" y1="74" x2="170" y2="74" stroke="#64748b" stroke-width="1" stroke-dasharray="4,2"/>
+      <defs><marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#64748b"/></marker></defs>
+    </svg>
+  </div>
+
+  <p><span class="tag tag-blue">设计目标</span></p>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:12px 0;">
+    <div style="background:#f0fdf4; border-radius:8px; padding:12px; text-align:center;">
+      <span style="font-size:1.2rem;">🎯</span>
+      <p style="font-weight:600; margin:4px 0 0;">稳态误差 = 0</p>
+      <p style="font-size:0.8rem; color:#64748b;">加积分 (I) 实现</p>
+    </div>
+    <div style="background:#f0fdf4; border-radius:8px; padding:12px; text-align:center;">
+      <span style="font-size:1.2rem;">⚡</span>
+      <p style="font-weight:600; margin:4px 0 0;">快速响应</p>
+      <p style="font-size:0.8rem; color:#64748b;">加比例 (P) 实现</p>
+    </div>
+    <div style="background:#f0fdf4; border-radius:8px; padding:12px; text-align:center;">
+      <span style="font-size:1.2rem;">🛡️</span>
+      <p style="font-weight:600; margin:4px 0 0;">抑制超调</p>
+      <p style="font-size:0.8rem; color:#64748b;">加微分 (D) 实现</p>
+    </div>
+  </div>
+
+  <h3>控制器参数整定</h3>
+  <p>如何确定 \(K_p, K_i, K_d\) 的值？经典方法有：</p>
+  <ul style="margin-left:20px; color:#334155;">
+    <li><strong>Ziegler-Nichols 法</strong>：先只加 P，增大 \(K_p\) 直到系统等幅振荡（临界振荡），记录临界增益 \(K_u\) 和振荡周期 \(T_u\)，然后用经验公式计算 PID 参数</li>
+    <li><strong>试凑法</strong>：先调 P 使响应变快，再加 I 消除稳态误差，最后加 D 抑制超调</li>
+  </ul>
+
+  <div class="summary-table" style="font-size:0.9rem;">
+    <table style="width:100%;">
+      <tr><th>参数</th><th>上升时间</th><th>超调量</th><th>调节时间</th><th>稳态误差</th></tr>
+      <tr><td>增大 \(K_p\)</td><td style="color:#10b981;">↓ 减小</td><td style="color:#ef4444;">↑ 增大</td><td style="color:#64748b;">变化不大</td><td style="color:#10b981;">↓ 减小</td></tr>
+      <tr><td>增大 \(K_i\)</td><td style="color:#10b981;">↓ 减小</td><td style="color:#ef4444;">↑ 增大</td><td style="color:#ef4444;">↑ 增大</td><td style="color:#10b981;">✅ 消除</td></tr>
+      <tr><td>增大 \(K_d\)</td><td style="color:#64748b;">变化不大</td><td style="color:#10b981;">↓ 减小</td><td style="color:#10b981;">↓ 减小</td><td style="color:#64748b;">不变</td></tr>
+    </table>
+  </div>
+
+  <div class="example-box">
+    <div class="label">📌 电机例子的最终控制器</div>
+    <p>经过整定，我们为直流电机设计了一个 PID 控制器：</p>
+    <div class="formula-box">\( G_c(s) = 2 + \frac{1}{s} + 0.5s \)</div>
+    <p>即 \(K_p = 2, K_i = 1, K_d = 0.5\)。加入后的闭环系统：</p>
+    <ul style="margin-left:18px;">
+      <li>✅ 稳态误差为 0（积分项的作用）</li>
+      <li>✅ 响应速度比原来快了约 2 倍（比例项的作用）</li>
+      <li>✅ 超调量控制在 5% 以内（微分项的阻尼作用）</li>
+      <li>✅ 负载扰动下转速波动小，恢复快</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 8. SUMMARY ==================== -->
+<div class="section">
+  <h2><span class="num">8</span> 总结 — 完整的设计流程</h2>
+
+  <p>回到我们的直流电机转速控制问题，看看整个流程的"故事线"：</p>
+
+  <div class="flow">
+    <div class="flow-item">
+      <strong>第1步：明确问题</strong><br>
+      我们要控制直流电机的转速稳定在目标值。负载变化、电压波动都会干扰它。
+    </div>
+    <div class="flow-item">
+      <strong>第2步：建立数学模型</strong><br>
+      从物理定律出发，写出微分方程，再用拉普拉斯变换得到传递函数 \(G(s) = \frac{10}{s+1}\)。
+    </div>
+    <div class="flow-item">
+      <strong>第3步：分析系统特性</strong><br>
+      时域分析：看阶跃响应，发现响应偏慢且有稳态误差。<br>
+      稳定性分析：用 Routh-Hurwitz 判据找出稳定范围 \(0 < K < 8\)。<br>
+      根轨迹分析：画出极点随增益变化的轨迹，直观看到稳定边界。<br>
+      频域分析：用 Bode 图看系统的带宽和稳定裕度。
+    </div>
+    <div class="flow-item">
+      <strong>第4步：设计控制器</strong><br>
+      加入 PID 控制器 \(G_c(s) = 2 + \frac{1}{s} + 0.5s\)，全面改善系统性能。
+    </div>
+    <div class="flow-item">
+      <strong>第5步：验证</strong><br>
+      检查闭环系统的稳定性、时域响应指标、频域裕度，确保满足要求。
+    </div>
+    <div class="flow-item">
+      <strong>第6步：实现</strong><br>
+      将 PID 算法写入单片机/DSP，连接编码器和驱动器，实际运行！
+    </div>
+  </div>
+
+  <h3>自动控制原理知识图谱</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:16px 0;">
+    <div style="background:#eff6ff; border-radius:10px; padding:14px; border:1px solid #bfdbfe;">
+      <strong style="color:#1d4ed8;">📐 数学模型</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">传递函数 · 微分方程 · 方块图 · 信号流图</p>
+    </div>
+    <div style="background:#fef3c7; border-radius:10px; padding:14px; border:1px solid #fde68a;">
+      <strong style="color:#b45309;">📊 时域分析</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">阶跃响应 · 超调量 · 调节时间 · 稳态误差</p>
+    </div>
+    <div style="background:#fce7f3; border-radius:10px; padding:14px; border:1px solid #fbcfe8;">
+      <strong style="color:#9d174d;">📈 根轨迹法</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">极点轨迹 · 增益与稳定性 · 设计指导</p>
+    </div>
+    <div style="background:#d1fae5; border-radius:10px; padding:14px; border:1px solid #a7f3d0;">
+      <strong style="color:#065f46;">🎵 频域分析</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">Bode 图 · Nyquist 判据 · 稳定裕度</p>
+    </div>
+    <div style="background:#f0fdf4; border-radius:10px; padding:14px; border:1px solid #bbf7d0;">
+      <strong style="color:#059669;">🛡️ 稳定性</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">Routh-Hurwitz · Nyquist · 李雅普诺夫</p>
+    </div>
+    <div style="background:#ede9fe; border-radius:10px; padding:14px; border:1px solid #ddd6fe;">
+      <strong style="color:#6d28d9;">🎛️ 控制器设计</strong>
+      <p style="font-size:0.85rem; margin:6px 0 0;color:#334155;">PID · 超前-滞后校正 · 状态反馈</p>
+    </div>
+  </div>
+
+  <div class="key-point">
+    <div class="label">💡 最后的话</div>
+    <p>自动控制原理就像是系统的"医学"：<strong>建模</strong>是体检，<strong>时域分析</strong>是看症状，<strong>稳定性</strong>是看会不会有危险，<strong>根轨迹/频域</strong>是各种检查手段，而<strong>控制器设计</strong>就是开药方。掌握这条主线，你就掌握了自动控制的核心思想！</p>
+  </div>
+</div>
+
+<div class="footer">
+  <p>希望能帮助你梳理自动控制原理的知识体系 🎯</p>
+</div>
+
+</div>
+</body>
+</html>
